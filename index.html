@@ -302,6 +302,7 @@
   <section id="costs" aria-labelledby="costHead">
     <h2 id="costHead">Costs</h2>
     <p class="section-sub">Every service CreativeFlow runs on. Amounts marked <span class="est" style="margin:0">EST</span> are estimates: replace them with your real bills.</p>
+    <div class="tiles" id="costTotals"></div>
     <div class="group" id="costList"><div class="empty">Loading…</div></div>
     <form class="add" id="costForm">
       <input type="text" id="costName" placeholder="Service" maxlength="60" aria-label="Service name">
@@ -678,7 +679,29 @@
   $('mClear').addEventListener('click', () => $('monthForm').reset());
 
   // ---------- Costs ----------
+  // Totals at the top of Costs: everything entered, as a monthly and a yearly amount.
+  function renderCostTotals() {
+    const box = $('costTotals');
+    if (!state.loaded.costs) { box.innerHTML = ''; return; }
+    const c = state.costs;
+    const monthly = c.filter(x => x.period === 'month').reduce((s, x) => s + num(x.amount), 0);
+    const yearly = c.filter(x => x.period === 'year').reduce((s, x) => s + num(x.amount), 0);
+    const usage = c.filter(x => x.period === 'usage').reduce((s, x) => s + num(x.amount), 0);
+    const free = c.filter(x => x.period === 'free').length;
+    const fixedMonth = monthly + yearly / 12;
+    const allMonth = fixedMonth + usage;
+    const r2 = (n) => Math.round(n * 100) / 100;
+    const tile = (label, value, note, strong) => '<div class="tile"><div class="label">' + label + '</div><div class="value' + (strong ? ' bad' : '') + '">' + value + '</div><div class="note">' + note + '</div></div>';
+    box.innerHTML =
+      tile('Total per month', money(r2(allMonth)), 'everything on this page' + (usage ? ' (incl. pay-as-you-go estimates)' : ''), true)
+      + tile('Total per year', money(r2(allMonth * 12)), 'per month × 12')
+      + tile('Fixed costs', money(r2(fixedMonth)) + ' / mo', money(r2(monthly)) + ' monthly + ' + money(r2(yearly)) + ' yearly ÷ 12')
+      + tile('Pay as you go', money(r2(usage)) + ' / mo', usage ? 'your estimates (they change with use)' : 'no estimates entered')
+      + tile('Services', String(c.length), free ? free + ' free' : 'all paid');
+  }
+
   function renderCosts() {
+    renderCostTotals();
     const list = $('costList'); list.innerHTML = '';
     if (!state.costs.length) { list.innerHTML = `<div class="empty">${state.loaded.costs ? 'No costs listed yet.' : 'Loading…'}</div>`; return; }
     const order = { month: 0, year: 1, usage: 2, free: 3 };

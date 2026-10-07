@@ -811,8 +811,8 @@
   const CLERK_KEY = 'pk_live_Y2xlcmsuY3JlYXRpdmVmbG93Lm1lZGlhJA';
   let clerk = null, hqData = null;
   const listeners = [];
-  async function authHeaders() {
-    const token = clerk && clerk.session ? await clerk.session.getToken() : null;
+  async function authHeaders(fresh) {
+    const token = clerk && clerk.session ? await clerk.session.getToken(fresh ? { skipCache: true } : undefined) : null;
     if (!token) throw Object.assign(new Error('signed out'), { code: 'signed_out' });
     return { Authorization: 'Bearer ' + token, 'Content-Type': 'application/json' };
   }
@@ -825,9 +825,13 @@
     });
   }
   async function loadHq() {
-    const res = await fetch(HQ_API, { headers: await authHeaders(), cache: 'no-store' });
+    let res;
+    try { res = await fetch(HQ_API, { headers: await authHeaders(), cache: 'no-store' }); }
+    catch (e) { throw Object.assign(new Error('network'), { code: e.code === 'signed_out' ? 'signed_out' : 'network' }); }
+    // A token that just expired: get a fresh one and try once more.
+    if (res.status === 401) res = await fetch(HQ_API, { headers: await authHeaders(true), cache: 'no-store' });
     if (res.status === 403) throw Object.assign(new Error('not founder'), { code: 'not_founder' });
-    if (!res.ok) throw Object.assign(new Error('load failed'), { code: 'load_failed' });
+    if (!res.ok) throw Object.assign(new Error('load failed'), { code: 'http_' + res.status });
     hqData = await res.json();
     emitAll();
   }
@@ -900,7 +904,7 @@
       await loadHq();
     } catch (e) {
       if (e.code === 'not_founder') { gate('This HQ is only for the CreativeFlow founder account. Sign out and sign in with the founder account.', false, true); return; }
-      gate("Couldn't load your HQ. Check your connection and reload the page.", false, true);
+      gate("Couldn't load your HQ. Check your connection and reload the page. (" + (e.code || e.message) + ')', false, true);
       return;
     }
     $('gate').hidden = true;

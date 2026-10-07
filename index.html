@@ -1,0 +1,912 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%231A1A1A'/%3E%3Ctext x='16' y='21' text-anchor='middle' font-family='Helvetica,Arial' font-weight='700' font-size='13' fill='white'%3ECF%3C/text%3E%3C/svg%3E">
+<style>*,*::before,*::after{box-sizing:border-box}body{margin:0}img{max-width:100%}[hidden]{display:none!important}</style>
+<title>CreativeFlow HQ</title>
+<style>
+  /* Layout: an admin shell — dark top bar, a light side menu on the left, and one full-height page at a time on the right (cards on a grey canvas). */
+  :root {
+    --canvas: #F1F1F1;
+    --side: #EBEBEB;
+    --side-hover: #E3E3E3;
+    --side-active: #FAFAFA;
+    --top: #1A1A1A;
+    --top-ink: #E3E3E3;
+    --panel: #FFFFFF;
+    --ink: #303030;
+    --muted: #616161;
+    --line: #E3E3E3;
+    --field: #8A8A8A;
+    --btn: #303030;
+    --btn-ink: #FFFFFF;
+    --accent: #005BD3;
+    --accent-soft: #EAF4FF;
+    --good: #29845A;
+    --warn: #8F5E00;
+    --bad: #C70A24;
+    --shadow: 0 1px 0 0 rgba(26, 26, 26, 0.07), 0 0 0 1px rgba(26, 26, 26, 0.08);
+    --s1: #2a78d6; --s2: #eb6834; --s3: #1baf7a; --s4: #eda100; --s5: #e87ba4; --s-done: #C4C4C4;
+    --font: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+    color-scheme: light;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --canvas: #1A1A1A; --side: #141414; --side-hover: #242424; --side-active: #2C2C2C;
+      --top: #0A0A0A; --top-ink: #E3E3E3; --panel: #242424; --ink: #E3E3E3; --muted: #A3A3A3;
+      --line: #383838; --field: #6B6B6B; --btn: #E3E3E3; --btn-ink: #1A1A1A;
+      --accent: #4B9BFF; --accent-soft: #1F2A3A; --good: #45B886; --warn: #E0A93B; --bad: #FF6B7D;
+      --shadow: 0 0 0 1px rgba(255, 255, 255, 0.08);
+      --s1: #3987e5; --s2: #d95926; --s3: #199e70; --s4: #c98500; --s5: #d55181; --s-done: #4A4A4A;
+      color-scheme: dark;
+    }
+  }
+  :root[data-theme="dark"] {
+    --canvas: #1A1A1A; --side: #141414; --side-hover: #242424; --side-active: #2C2C2C;
+    --top: #0A0A0A; --top-ink: #E3E3E3; --panel: #242424; --ink: #E3E3E3; --muted: #A3A3A3;
+    --line: #383838; --field: #6B6B6B; --btn: #E3E3E3; --btn-ink: #1A1A1A;
+    --accent: #4B9BFF; --accent-soft: #1F2A3A; --good: #45B886; --warn: #E0A93B; --bad: #FF6B7D;
+    --shadow: 0 0 0 1px rgba(255, 255, 255, 0.08);
+    --s1: #3987e5; --s2: #d95926; --s3: #199e70; --s4: #c98500; --s5: #d55181; --s-done: #4A4A4A;
+    color-scheme: dark;
+  }
+
+  html, body { height: 100%; }
+  body { background: var(--canvas); color: var(--ink); font-family: var(--font); font-size: 13.5px; line-height: 1.45; margin: 0; }
+  button, input, select { font-family: var(--font); }
+
+  /* ---------- Shell ---------- */
+  .shell { display: grid; grid-template-columns: 240px minmax(0, 1fr); grid-template-rows: 56px minmax(0, 1fr); height: 100%; }
+  .topbar {
+    grid-column: 1 / -1; display: flex; align-items: center; justify-content: space-between; gap: 12px;
+    background: var(--top); color: var(--top-ink); padding: 0 16px;
+  }
+  .brand { display: flex; align-items: center; gap: 10px; font-weight: 700; font-size: 15px; color: #FFFFFF; }
+  .brand-mark { width: 26px; height: 26px; border-radius: 7px; background: #FFFFFF; color: #1A1A1A; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 12px; }
+  .status { font-size: 12.5px; color: var(--top-ink); opacity: 0.8; text-align: right; }
+  .status.err { color: #FFB4BE; opacity: 1; }
+
+  .side { background: var(--side); border-right: 1px solid var(--line); padding: 12px 8px; overflow-y: auto; }
+  nav.sections { display: grid; gap: 2px; }
+  nav.sections a {
+    display: flex; align-items: center; gap: 10px; padding: 7px 10px; border-radius: 8px;
+    color: var(--ink); text-decoration: none; font-weight: 600; font-size: 13.5px;
+  }
+  nav.sections a svg { width: 18px; height: 18px; flex-shrink: 0; color: var(--muted); }
+  nav.sections a:hover { background: var(--side-hover); }
+  nav.sections a:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+  nav.sections a[aria-current="page"] { background: var(--side-active); box-shadow: var(--shadow); }
+  nav.sections a[aria-current="page"] svg { color: var(--ink); }
+  .side-foot { margin-top: 18px; padding: 10px; font-size: 12px; color: var(--muted); line-height: 1.5; }
+
+  .main { overflow-y: auto; min-width: 0; }
+  .page { max-width: 1000px; margin: 0 auto; padding-inline: 24px; padding-block: 22px 60px; }
+
+  /* ---------- Page headings ---------- */
+  section { min-height: calc(100vh - 56px - 82px); }
+  h2 { font-size: 20px; font-weight: 700; margin: 0 0 4px; letter-spacing: -0.01em; }
+  h2:focus { outline: none; }
+  .section-sub { color: var(--muted); font-size: 13.5px; margin: 0 0 16px; max-width: 70ch; }
+  h3 { font-weight: 700; }
+
+  /* ---------- Cards ---------- */
+  .tile, .pie-card, .next, .group, .table-wrap, .chart, .month-form, .card {
+    background: var(--panel); border: none; border-radius: 12px; box-shadow: var(--shadow);
+  }
+  .tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 12px; margin-bottom: 14px; }
+  .tile { padding: 14px 16px; min-width: 0; }
+  .tile .label { font-size: 13px; color: var(--muted); font-weight: 600; }
+  .tile .value { font-weight: 700; font-size: 24px; font-variant-numeric: tabular-nums; margin-top: 4px; }
+  .tile .note { font-size: 12px; color: var(--muted); margin-top: 2px; }
+  .value.good { color: var(--good); } .value.bad { color: var(--bad); }
+
+  .pies { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 12px; margin-bottom: 14px; }
+  .pie-card { padding: 14px 16px; min-width: 0; }
+  .pie-card h3 { margin: 0 0 10px; font-size: 13.5px; }
+  .pie-body { display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 12px 14px; }
+  .pie-body svg { width: 116px; height: 116px; flex-shrink: 0; }
+  .pie-body svg path { transition: opacity 0.15s; }
+  .pie-card.hovering path:not(.on) { opacity: 0.35; }
+  .legend { list-style: none; margin: 0; padding: 0; display: grid; gap: 5px; min-width: 150px; flex: 1 1 150px; font-size: 13px; }
+  .legend li { display: grid; grid-template-columns: 10px 1fr auto; gap: 7px; align-items: center; border-radius: 6px; padding: 1px 4px; }
+  .legend li.on { background: var(--accent-soft); }
+  .legend .sw { width: 10px; height: 10px; border-radius: 3px; }
+  .legend .lbl { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .legend .val { font-variant-numeric: tabular-nums; color: var(--muted); white-space: nowrap; }
+  .pie-empty { color: var(--muted); font-size: 13px; padding: 18px 0; }
+
+  .next { padding: 14px 16px; }
+  .next h3 { margin: 0 0 8px; font-size: 13.5px; }
+  .next ol { margin: 0; padding-left: 20px; display: grid; gap: 4px; }
+
+  /* ---------- Lists ---------- */
+  .group { padding: 4px 0; margin-bottom: 12px; overflow: hidden; }
+  .group-head { display: flex; justify-content: space-between; align-items: baseline; padding: 10px 16px 6px; }
+  .group-head h3 { margin: 0; font-size: 14px; }
+  .chip { font-size: 12px; font-weight: 600; padding: 2px 8px; border-radius: 8px; background: var(--side); color: var(--ink); white-space: nowrap; }
+  .chip.now { background: #FEDAD9; color: #8E0B21; }
+  .row { display: flex; align-items: flex-start; gap: 10px; padding: 9px 16px; border-top: 1px solid var(--line); }
+  .row .text { flex: 1; min-width: 0; overflow-wrap: anywhere; }
+  .row.done .text { color: var(--muted); text-decoration: line-through; }
+  .row input[type="checkbox"] { width: 16px; height: 16px; margin-top: 1px; accent-color: var(--btn); flex-shrink: 0; }
+  .icon-btn { border: none; background: transparent; color: var(--muted); cursor: pointer; font-size: 13px; padding: 3px 7px; border-radius: 6px; flex-shrink: 0; }
+  .icon-btn:hover, .icon-btn:focus-visible { background: var(--side); color: var(--ink); outline: none; }
+  .empty { color: var(--muted); font-size: 13.5px; padding: 12px 16px; }
+  .meta { font-size: 12.5px; color: var(--muted); }
+
+  /* ---------- Forms ---------- */
+  form.add { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+  input[type="text"], input[type="number"], input[type="month"], input[type="email"], select {
+    font-size: 13.5px; color: var(--ink); background: var(--panel);
+    border: 1px solid var(--field); border-radius: 8px; padding: 7px 10px; min-width: 0;
+  }
+  input:focus-visible, select:focus-visible, button:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+  form.add input[type="text"] { flex: 1 1 220px; }
+  .btn {
+    font-weight: 600; font-size: 13px; padding: 7px 14px; border-radius: 8px; cursor: pointer;
+    border: none; background: var(--btn); color: var(--btn-ink);
+    box-shadow: 0 -1px 0 0 rgba(0, 0, 0, 0.8) inset, 0 1px 0 0 rgba(255, 255, 255, 0.25) inset;
+  }
+  .btn:hover { filter: brightness(1.15); }
+  .btn.ghost { background: var(--panel); color: var(--ink); box-shadow: var(--shadow); }
+  .btn:disabled { opacity: 0.5; cursor: default; }
+
+  /* ---------- Money ---------- */
+  .table-wrap { overflow-x: auto; }
+  table { width: 100%; border-collapse: collapse; font-size: 13.5px; }
+  th, td { padding: 10px 14px; text-align: right; white-space: nowrap; border-bottom: 1px solid var(--line); }
+  th:first-child, td:first-child { text-align: left; }
+  th { font-size: 12.5px; color: var(--muted); font-weight: 600; background: var(--canvas); }
+  td { font-variant-numeric: tabular-nums; }
+  tr:last-child td { border-bottom: none; }
+  td.pos { color: var(--good); font-weight: 700; } td.neg { color: var(--bad); font-weight: 700; }
+  .chart { padding: 12px; margin-top: 12px; }
+  .chart svg { width: 100%; height: auto; display: block; }
+  .month-form { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; padding: 16px; margin-top: 12px; }
+  .month-form label { display: grid; gap: 4px; font-size: 13px; color: var(--ink); font-weight: 500; }
+  .month-form .actions { display: flex; gap: 8px; align-items: end; flex-wrap: wrap; }
+  .hint { font-size: 12.5px; color: var(--muted); margin-top: 8px; }
+
+  .cost-amount { font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .est { font-size: 11px; font-weight: 700; margin-left: 5px; padding: 1px 6px; border-radius: 6px; background: #FFEF9D; color: #4F4700; }
+
+  /* ---------- Plan ---------- */
+  .plan { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 12px; }
+  .card { padding: 16px; min-width: 0; }
+  .card h3 { margin: 0 0 8px; font-size: 14px; }
+  .card p, .card li { font-size: 13.5px; }
+  .card ul { margin: 0; padding-left: 18px; display: grid; gap: 4px; }
+  .card p { margin: 0 0 6px; }
+
+  .top-right { display: flex; align-items: center; gap: 12px; }
+  .btn.small { padding: 5px 10px; font-size: 12.5px; }
+  .topbar .btn.ghost { background: transparent; color: var(--top-ink); box-shadow: 0 0 0 1px rgba(255,255,255,0.25); }
+  .gate { position: fixed; inset: 0; z-index: 50; display: flex; align-items: center; justify-content: center; padding: 16px; background: var(--canvas); }
+  .gate[hidden] { display: none; }
+  .gate-card { width: min(440px, 100%); background: var(--panel); border-radius: 14px; box-shadow: var(--shadow); padding: 22px; text-align: center; }
+  .gate-brand { justify-content: center; color: var(--ink); margin-bottom: 8px; }
+  .gate-brand .brand-mark { background: var(--btn); color: var(--btn-ink); }
+  .gate-msg { color: var(--muted); margin: 0 0 14px; }
+  #signInMount { display: flex; justify-content: center; }
+  .pill { font-size: 12px; font-weight: 700; padding: 2px 8px; border-radius: 8px; white-space: nowrap; }
+  .pill.on { background: #CDFEE1; color: #0C5132; } .pill.off { background: var(--side); color: var(--muted); }
+  .toast { position: fixed; left: 50%; bottom: calc(18px + env(safe-area-inset-bottom, 0px)); transform: translateX(-50%); background: #1A1A1A; color: #FFFFFF; padding: 9px 14px; border-radius: 10px; font-size: 13px; opacity: 0; transition: opacity 0.2s; pointer-events: none; }
+  .toast.show { opacity: 1; }
+
+  /* ---------- Phones: the side menu becomes a scrolling row under the top bar ---------- */
+  @media (max-width: 760px) {
+    .shell { grid-template-columns: minmax(0, 1fr); grid-template-rows: 52px auto minmax(0, 1fr); }
+    .side { border-right: none; border-bottom: 1px solid var(--line); padding: 6px 8px; overflow-x: auto; overflow-y: hidden; }
+    nav.sections { display: flex; gap: 4px; }
+    nav.sections a { flex-shrink: 0; padding: 6px 10px; }
+    .side-foot { display: none; }
+    .page { padding-inline: 16px; padding-block: 16px 48px; }
+    section { min-height: 0; }
+    .status { display: none; }
+  }
+  @media (prefers-reduced-motion: reduce) { .toast, .pie-body svg path { transition: none; } }
+</style>
+
+<div class="shell">
+  <header class="topbar">
+    <div class="brand"><span class="brand-mark" aria-hidden="true">CF</span><h1 style="font-size:15px;margin:0">CreativeFlow HQ</h1></div>
+    <div class="top-right"><div class="status" id="status">Signing in…</div><button type="button" class="btn ghost small" id="signOutBtn" hidden>Sign out</button></div>
+  </header>
+  <aside class="side">
+    <nav class="sections" aria-label="Pages">
+      <a href="#overview"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 9.5 10 4l7 5.5V16a1 1 0 0 1-1 1h-3.5v-4.5h-5V17H4a1 1 0 0 1-1-1z"/></svg><span>Overview</span></a>
+      <a href="#todos"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.5" y="3.5" width="13" height="13" rx="2.5"/><path d="m7 10 2 2 4-4"/></svg><span>To-dos</span></a>
+      <a href="#money"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 3v14"/><path d="M13.5 6.5c0-1.4-1.6-2.3-3.5-2.3S6.5 5 6.5 6.6c0 3.6 7 1.9 7 5.4 0 1.5-1.6 2.5-3.5 2.5s-3.5-1-3.5-2.4"/></svg><span>Money</span></a>
+      <a href="#costs"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 3h10v14l-2-1.3-1.7 1.3L10 15.7 8.7 17 7 15.7 5 17z"/><path d="M7.5 7h5M7.5 10h5"/></svg><span>Costs</span></a>
+      <a href="#testers"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="7.5" cy="7" r="2.6"/><path d="M2.8 16c.4-2.6 2.3-4.2 4.7-4.2s4.3 1.6 4.7 4.2"/><circle cx="14" cy="7.8" r="2"/><path d="M13.2 11.9c2.1-.2 3.7 1.1 4 3.4"/></svg><span>Beta testers</span></a>
+      <a href="#agency"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 2.8 12.2 7.3l5 .7-3.6 3.5.8 5L10 14.2l-4.4 2.3.8-5L2.8 8l5-.7z"/></svg><span>Agency clients</span></a>
+      <a href="#plan"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 5.5 7.5 3.5l5 2 4.5-2v11l-4.5 2-5-2L3 16.5z"/><path d="M7.5 3.5v11M12.5 5.5v11"/></svg><span>Plan</span></a>
+    </nav>
+    <div class="side-foot">Saved automatically on CreativeFlow's server. Only your founder account can open this page.</div>
+  </aside>
+  <main class="main" id="main">
+  <div class="page">
+
+  <section id="overview" aria-labelledby="ovHead">
+    <h2 id="ovHead">Overview</h2>
+    <p class="section-sub" id="ovSub">Numbers come from the latest month you've entered under Money.</p>
+    <div class="tiles">
+      <div class="tile"><div class="label">Paying members</div><div class="value" id="tMembers">–</div><div class="note" id="tMembersNote">no months yet</div></div>
+      <div class="tile"><div class="label">Revenue this month</div><div class="value" id="tRevenue">–</div><div class="note">before fees</div></div>
+      <div class="tile"><div class="label">Profit this month</div><div class="value" id="tProfit">–</div><div class="note">revenue minus all costs</div></div>
+      <div class="tile"><div class="label">Fixed costs / month</div><div class="value" id="tFixed">–</div><div class="note">from Costs (yearly ÷ 12)</div></div>
+      <div class="tile"><div class="label">Open to-dos</div><div class="value" id="tTodos">–</div><div class="note" id="tTodosNote"></div></div>
+    </div>
+    <div class="pies">
+      <div class="pie-card" id="pieTodos"><h3>To-dos</h3><div class="pie-empty">Loading…</div></div>
+      <div class="pie-card" id="pieMoney"><h3>Where this month's money goes</h3><div class="pie-empty">Loading…</div></div>
+      <div class="pie-card" id="pieCosts"><h3>Fixed costs per month</h3><div class="pie-empty">Loading…</div></div>
+      <div class="pie-card" id="pieTesters"><h3>Beta testers</h3><div class="pie-empty">Loading…</div></div>
+    </div>
+    <div class="next"><h3>Do next</h3><ol id="nextList"><li class="meta">Loading…</li></ol></div>
+  </section>
+
+  <section id="todos" aria-labelledby="todoHead">
+    <h2 id="todoHead">To-dos</h2>
+    <p class="section-sub">Tick things off as you go. "Now" is urgent, "Next" is soon, "Later" is the roadmap.</p>
+    <div id="todoGroups"></div>
+    <form class="add" id="todoForm">
+      <input type="text" id="todoText" placeholder="Add a to-do…" maxlength="200" aria-label="New to-do">
+      <select id="todoGroup" aria-label="When">
+        <option value="now">Now</option>
+        <option value="next" selected>Next</option>
+        <option value="later">Later</option>
+      </select>
+      <button class="btn" type="submit">Add</button>
+    </form>
+  </section>
+
+  <section id="money" aria-labelledby="moneyHead">
+    <h2 id="moneyHead">Money</h2>
+    <p class="section-sub">One row per month. Profit = revenue − Gumroad fees − Adonis − Netlify − other costs.</p>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Month</th><th>Members</th><th>Revenue</th><th>Gumroad</th><th>Adonis</th><th>Netlify</th><th>Other</th><th>Profit</th><th></th></tr></thead>
+        <tbody id="monthRows"><tr><td colspan="9" class="meta" style="text-align:left">Loading…</td></tr></tbody>
+      </table>
+    </div>
+    <div class="chart" id="profitChart" hidden></div>
+    <form class="month-form" id="monthForm">
+      <label>Month<input type="month" id="mMonth" required></label>
+      <label>Paying members<input type="number" id="mMembers" min="0" step="1" inputmode="numeric"></label>
+      <label>Revenue ($)<input type="number" id="mRevenue" min="0" step="0.01" inputmode="decimal"></label>
+      <label>Gumroad fees ($)<input type="number" id="mGumroad" min="0" step="0.01" inputmode="decimal"></label>
+      <label>Adonis / Anthropic ($)<input type="number" id="mAi" min="0" step="0.01" inputmode="decimal"></label>
+      <label>Netlify ($)<input type="number" id="mNetlify" min="0" step="0.01" inputmode="decimal"></label>
+      <label>Other costs ($)<input type="number" id="mOther" min="0" step="0.01" inputmode="decimal"></label>
+      <div class="actions">
+        <button class="btn" type="submit" id="mSave">Save month</button>
+        <button class="btn ghost" type="button" id="mClear">Clear</button>
+      </div>
+    </form>
+    <p class="hint">Saving a month that already exists replaces it. Revenue and member counts are in Gumroad → Analytics; Adonis costs are in the Anthropic Console → Usage.</p>
+  </section>
+
+  <section id="costs" aria-labelledby="costHead">
+    <h2 id="costHead">Costs</h2>
+    <p class="section-sub">Every service CreativeFlow runs on. Amounts marked <span class="est" style="margin:0">EST</span> are estimates: replace them with your real bills.</p>
+    <div class="group" id="costList"><div class="empty">Loading…</div></div>
+    <form class="add" id="costForm">
+      <input type="text" id="costName" placeholder="Service" maxlength="60" aria-label="Service name">
+      <input type="number" id="costAmount" placeholder="Amount $" min="0" step="0.01" style="width:110px" aria-label="Amount in dollars">
+      <select id="costPeriod" aria-label="How often">
+        <option value="month">per month</option>
+        <option value="year">per year</option>
+        <option value="usage">pay as you go</option>
+        <option value="free">free</option>
+      </select>
+      <input type="text" id="costNote" placeholder="Note (optional)" maxlength="140" aria-label="Note">
+      <button class="btn" type="submit" id="costSave">Add</button>
+    </form>
+  </section>
+
+  <section id="testers" aria-labelledby="testerHead">
+    <h2 id="testerHead">Beta testers</h2>
+    <p class="section-sub">Who's testing, where they are, and whether their OG badge is on. Ask Claude to switch a new tester's badge on.</p>
+    <div class="group" id="testerList"><div class="empty">Loading…</div></div>
+    <form class="add" id="testerForm">
+      <input type="text" id="testerName" placeholder="Name" maxlength="60" aria-label="Tester name">
+      <input type="email" id="testerEmail" placeholder="Email (for the OG badge)" maxlength="120" aria-label="Tester email" style="flex:1 1 200px">
+      <select id="testerStatus" aria-label="Status">
+        <option value="invited">Invited</option>
+        <option value="testing">Testing</option>
+        <option value="feedback">Gave feedback</option>
+        <option value="done">Done</option>
+      </select>
+      <button class="btn" type="submit">Add</button>
+    </form>
+  </section>
+
+  <section id="agency" aria-labelledby="agencyHead">
+    <h2 id="agencyHead">Agency clients</h2>
+    <p class="section-sub">Clients of your agency get <strong>lifetime CreativeFlow membership</strong>. Add their name and the email they'll sign up with: when they sign in to CreativeFlow with that email (email, Google or Apple), the app and Adonis unlock automatically. No Gumroad needed.</p>
+    <div class="group" id="agencyList"><div class="empty">Loading…</div></div>
+    <form class="add" id="agencyForm">
+      <input type="text" id="agencyName" placeholder="Name" maxlength="80" aria-label="Client name">
+      <input type="email" id="agencyEmail" placeholder="Email they sign in with" maxlength="200" aria-label="Client email" style="flex:1 1 220px" required>
+      <input type="text" id="agencyNote" placeholder="Package / note (optional)" maxlength="140" aria-label="Note">
+      <button class="btn" type="submit">Add client</button>
+    </form>
+    <p class="hint">Pausing a client turns their free membership off without deleting them. Their projects stay in their account.</p>
+  </section>
+
+  <section id="plan" aria-labelledby="planHead">
+    <h2 id="planHead">Plan</h2>
+    <p class="section-sub">The business plan from September 30, 2026. Ask Claude to update it as things change.</p>
+    <div class="plan">
+      <div class="card">
+        <h3>Positioning</h3>
+        <p>CreativeFlow owns <strong>pre-production</strong>: idea → hook → title &amp; thumbnail → script → schedule.</p>
+        <p class="meta">"Where your next video gets planned before you press record." For creators with roughly 0–100k followers, posting weekly, without a team.</p>
+      </div>
+      <div class="card">
+        <h3>Pricing to test</h3>
+        <ul>
+          <li><strong>Starter</strong> ~$14.99/mo: no or limited Adonis</li>
+          <li><strong>Pro</strong> ~$29.99/mo: full Adonis, planner, Customize</li>
+          <li><strong>Founding member</strong> ~$19.99/mo locked for life, first 50, with the OG badge</li>
+          <li>Annual billing with 2 months free; 7-day free trial</li>
+        </ul>
+      </div>
+      <div class="card">
+        <h3>Getting members</h3>
+        <ul>
+          <li>Build in public: devlogs and shorts about making the app</li>
+          <li>Plan your own videos in CreativeFlow on camera</li>
+          <li>Affiliates: ~30% recurring for referrals (Gumroad supports it)</li>
+          <li>Member Discord, leaderboard and badges</li>
+          <li>Beta tester feedback → testimonials (with permission)</li>
+        </ul>
+      </div>
+      <div class="card">
+        <h3>Numbers to watch</h3>
+        <ul>
+          <li>Members and monthly revenue</li>
+          <li>Churn under ~8% a month</li>
+          <li>Activation: plans a first video within 24 hours</li>
+          <li>Adonis cost per member (budget ~$10)</li>
+        </ul>
+      </div>
+      <div class="card">
+        <h3>Unit economics at 25 members ($49.99)</h3>
+        <ul>
+          <li>Revenue ≈ $1,250 / month</li>
+          <li>Gumroad fees ≈ $140–165 · Adonis ≈ $150–300 · Netlify ≈ $20–50 · Domain ≈ $3</li>
+          <li><strong>Profit ≈ $750–930 / month</strong> before income tax and your Claude plan</li>
+          <li>Worst case (everyone maxes Adonis at 35/day): still ≈ $300+</li>
+        </ul>
+      </div>
+      <div class="card">
+        <h3>Next 90 days</h3>
+        <ul>
+          <li><strong>Month 1:</strong> Netlify + sign-in fixed, beta test, decide pricing</li>
+          <li><strong>Month 2:</strong> founding-member spots, post the VSL, devlogs, affiliates</li>
+          <li><strong>Month 3:</strong> 25 paying members, ship the leaderboard, collect testimonials</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+  </div>
+  </main>
+</div>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+<div class="gate" id="gate">
+  <div class="gate-card">
+    <div class="brand gate-brand"><span class="brand-mark" aria-hidden="true">CF</span><span>CreativeFlow HQ</span></div>
+    <p class="gate-msg" id="gateMsg">Loading sign-in…</p>
+    <div id="signInMount"></div>
+    <button type="button" class="btn" id="gateSignOut" hidden>Sign out</button>
+  </div>
+</div>
+
+<script>
+  const $ = (id) => document.getElementById(id);
+  const money = (n) => (n < 0 ? '−$' : '$') + Math.abs(n).toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 2 });
+  const num = (v) => { const n = parseFloat(v); return isFinite(n) ? n : 0; };
+  const monthLabel = (m) => { const [y, mo] = String(m).split('-').map(Number); return y && mo ? new Date(y, mo - 1, 1).toLocaleDateString(undefined, { month: 'short', year: 'numeric' }) : m; };
+  const GROUPS = [['now', 'Now'], ['next', 'Next'], ['later', 'Later']];
+  const PERIOD = { month: '/ month', year: '/ year', usage: 'pay as you go', free: 'free' };
+  const TESTER_STATUS = { invited: 'Invited', testing: 'Testing', feedback: 'Gave feedback', done: 'Done' };
+
+  let db = null, canWrite = true;
+  const state = { todos: [], months: [], costs: [], testers: [], agency: [], loaded: { todos: false, months: false, costs: false, testers: false, agency: false } };
+  let editingCostId = null;
+
+  function toast(msg) {
+    const t = $('toast'); t.textContent = msg; t.classList.add('show');
+    clearTimeout(toast.timer); toast.timer = setTimeout(() => t.classList.remove('show'), 1800);
+  }
+  function setStatus(msg, isErr) { const s = $('status'); s.textContent = msg; s.classList.toggle('err', !!isErr); }
+  function handleError(e) {
+    const code = e && e.code;
+    if (code === 'invalid_argument' && !canWrite) return;
+    if (code === 'invalid_argument') { canWrite = false; setStatus('You can view this page but not change it.', true); applyWriteMode(); return; }
+    if (code === 'quota_exceeded') { setStatus('The page is full — delete some old items to add new ones.', true); return; }
+    setStatus("Couldn't save that. Check your connection and try again.", true);
+  }
+  async function write(fn) {
+    if (!db || !canWrite) return;
+    try { await fn(); } catch (e) { handleError(e); }
+  }
+  function applyWriteMode() {
+    document.querySelectorAll('form, .row input[type="checkbox"], .icon-btn').forEach(el => {
+      if (el.tagName === 'FORM') el.hidden = !canWrite; else el.disabled = !canWrite;
+    });
+  }
+
+  function profitOf(m) { return num(m.revenue) - num(m.gumroadFees) - num(m.aiCost) - num(m.netlifyCost) - num(m.otherCosts); }
+  function fixedMonthly() {
+    return state.costs.reduce((sum, c) => sum + (c.period === 'month' ? num(c.amount) : c.period === 'year' ? num(c.amount) / 12 : 0), 0);
+  }
+
+  // ---------- Overview ----------
+  function renderOverview() {
+    renderPies();
+    const latest = state.months[state.months.length - 1];
+    if (latest) {
+      $('tMembers').textContent = num(latest.members);
+      $('tMembersNote').textContent = monthLabel(latest.month);
+      $('tRevenue').textContent = money(num(latest.revenue));
+      const p = profitOf(latest);
+      $('tProfit').textContent = money(p);
+      $('tProfit').className = 'value ' + (p >= 0 ? 'good' : 'bad');
+    } else {
+      ['tMembers', 'tRevenue', 'tProfit'].forEach(id => { $(id).textContent = '–'; });
+      $('tMembersNote').textContent = state.loaded.months ? 'add a month under Money' : '';
+      $('tProfit').className = 'value';
+    }
+    $('tFixed').textContent = state.loaded.costs ? money(Math.round(fixedMonthly() * 100) / 100) : '–';
+    const open = state.todos.filter(t => !t.done);
+    $('tTodos').textContent = state.loaded.todos ? open.length : '–';
+    const urgent = open.filter(t => t.group === 'now').length;
+    $('tTodosNote').textContent = state.loaded.todos ? `${urgent} marked Now` : '';
+    const next = [...open.filter(t => t.group === 'now'), ...open.filter(t => t.group === 'next')].slice(0, 4);
+    const list = $('nextList'); list.innerHTML = '';
+    if (!state.loaded.todos) { list.innerHTML = '<li class="meta">Loading…</li>'; return; }
+    if (!next.length) { list.innerHTML = '<li class="meta">Nothing urgent. Add to-dos below.</li>'; return; }
+    next.forEach(t => { const li = document.createElement('li'); li.textContent = t.text; list.appendChild(li); });
+  }
+
+  // ---------- Pie charts (Overview) ----------
+  // A donut per card: slices separated by a 2px gap in the panel colour, and a legend with
+  // every value and share (so no slice relies on colour alone); hovering links slice and legend.
+  const esc = (s) => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+  function donut(cardId, title, items, opts) {
+    const card = $(cardId);
+    const shown = items.filter(i => i.value > 0);
+    const total = shown.reduce((s, i) => s + i.value, 0);
+    card.innerHTML = '<h3>' + esc(title) + '</h3>';
+    if (!total) { card.insertAdjacentHTML('beforeend', '<div class="pie-empty">' + esc(opts.empty) + '</div>'); return; }
+    const fmt = opts.format || (v => String(v));
+    const cs = getComputedStyle(document.documentElement);
+    const gap = cs.getPropertyValue('--panel').trim();
+    const ink = cs.getPropertyValue('--ink').trim(), muted = cs.getPropertyValue('--muted').trim();
+    const RO = 54, RI = 34, C = 60;
+    const pt = (rad, a) => [C + rad * Math.cos(a), C + rad * Math.sin(a)];
+    let a0 = -Math.PI / 2, paths = '';
+    shown.forEach((it, i) => {
+      const frac = it.value / total, a1 = a0 + frac * Math.PI * 2;
+      let d;
+      if (frac >= 0.9999) {
+        d = 'M' + (C - RO) + ',' + C + ' a' + RO + ',' + RO + ' 0 1,0 ' + (2 * RO) + ',0 a' + RO + ',' + RO + ' 0 1,0 ' + (-2 * RO) + ',0 '
+          + 'M' + (C - RI) + ',' + C + ' a' + RI + ',' + RI + ' 0 1,1 ' + (2 * RI) + ',0 a' + RI + ',' + RI + ' 0 1,1 ' + (-2 * RI) + ',0';
+      } else {
+        const large = a1 - a0 > Math.PI ? 1 : 0;
+        const [x0, y0] = pt(RO, a0), [x1, y1] = pt(RO, a1), [x2, y2] = pt(RI, a1), [x3, y3] = pt(RI, a0);
+        d = 'M' + x0 + ',' + y0 + ' A' + RO + ',' + RO + ' 0 ' + large + ' 1 ' + x1 + ',' + y1 + ' L' + x2 + ',' + y2
+          + ' A' + RI + ',' + RI + ' 0 ' + large + ' 0 ' + x3 + ',' + y3 + ' Z';
+      }
+      const pct = Math.round(frac * 100);
+      paths += '<path data-i="' + i + '" d="' + d + '" fill="' + it.color + '" fill-rule="evenodd" stroke="' + gap + '" stroke-width="2"><title>'
+        + esc(it.label) + ': ' + esc(fmt(it.value)) + ' (' + pct + '%)</title></path>';
+      a0 = a1;
+    });
+    const center = '<text x="' + C + '" y="' + (C - 1) + '" text-anchor="middle" font-size="15" font-weight="700" fill="' + ink + '" font-family="Helvetica Neue, Helvetica, Arial, sans-serif">' + esc(opts.centerValue) + '</text>'
+      + '<text x="' + C + '" y="' + (C + 13) + '" text-anchor="middle" font-size="9.5" fill="' + muted + '" font-family="Helvetica Neue, Helvetica, Arial, sans-serif">' + esc(opts.centerLabel) + '</text>';
+    const legend = shown.map((it, i) => '<li data-i="' + i + '"><span class="sw" style="background:' + it.color + '"></span><span class="lbl" title="' + esc(it.label) + '">'
+      + esc(it.label) + '</span><span class="val">' + esc(fmt(it.value)) + ' · ' + Math.round(it.value / total * 100) + '%</span></li>').join('');
+    const aria = esc(title + ': ' + shown.map(i => i.label + ' ' + fmt(i.value)).join(', '));
+    card.insertAdjacentHTML('beforeend', '<div class="pie-body"><svg viewBox="0 0 120 120" role="img" aria-label="' + aria + '">' + paths + center + '</svg><ul class="legend">' + legend + '</ul></div>');
+    const setOn = (i) => {
+      card.classList.toggle('hovering', i != null);
+      card.querySelectorAll('[data-i]').forEach(el => el.classList.toggle('on', el.dataset.i === String(i)));
+    };
+    card.querySelectorAll('[data-i]').forEach(el => {
+      el.addEventListener('mouseenter', () => setOn(el.dataset.i));
+      el.addEventListener('mouseleave', () => setOn(null));
+    });
+  }
+  const color = (n) => 'var(--s' + n + ')';
+  function renderPies() {
+    // To-dos: what is still open in each group, and what is done.
+    const t = state.todos;
+    const doneCount = t.filter(x => x.done).length;
+    donut('pieTodos', 'To-dos', state.loaded.todos ? [
+      { label: 'Now (open)', value: t.filter(x => !x.done && x.group === 'now').length, color: color(1) },
+      { label: 'Next (open)', value: t.filter(x => !x.done && (x.group || 'next') === 'next').length, color: color(2) },
+      { label: 'Later (open)', value: t.filter(x => !x.done && x.group === 'later').length, color: color(3) },
+      { label: 'Done', value: doneCount, color: 'var(--s-done)' }
+    ] : [], { empty: state.loaded.todos ? 'No to-dos yet.' : 'Loading…', centerValue: doneCount + '/' + t.length, centerLabel: 'done' });
+
+    // Money: how the latest month's revenue splits into costs and profit.
+    const latest = state.months[state.months.length - 1];
+    if (!latest) {
+      donut('pieMoney', "Where this month's money goes", [], { empty: state.loaded.months ? 'Add a month on the Money page to see this.' : 'Loading…' });
+    } else {
+      const p = profitOf(latest);
+      donut('pieMoney', 'Where ' + monthLabel(latest.month) + ' money goes', [
+        { label: 'Profit', value: Math.max(0, p), color: color(1) },
+        { label: 'Gumroad fees', value: num(latest.gumroadFees), color: color(2) },
+        { label: 'Adonis (AI)', value: num(latest.aiCost), color: color(3) },
+        { label: 'Netlify', value: num(latest.netlifyCost), color: color(4) },
+        { label: 'Other costs', value: num(latest.otherCosts), color: color(5) }
+      ], { empty: 'No revenue or costs entered for ' + monthLabel(latest.month) + ' yet.', format: v => money(Math.round(v)),
+           centerValue: money(Math.round(num(latest.revenue))), centerLabel: p < 0 ? 'revenue (a loss)' : 'revenue' });
+    }
+
+    // Fixed costs as a monthly amount each; colour follows the service, not its size.
+    const fixed = state.costs.filter(c => (c.period === 'month' || c.period === 'year') && num(c.amount) > 0)
+      .map(c => ({ id: c.id, label: c.name, value: c.period === 'year' ? num(c.amount) / 12 : num(c.amount) }))
+      .sort((a, b) => a.id.localeCompare(b.id));
+    const costItems = fixed.slice(0, 4).map((c, i) => ({ label: c.label, value: c.value, color: color(i + 1) }));
+    if (fixed.length > 4) costItems.push({ label: 'Other', value: fixed.slice(4).reduce((s, c) => s + c.value, 0), color: color(5) });
+    costItems.sort((a, b) => b.value - a.value);
+    donut('pieCosts', 'Fixed costs per month', state.loaded.costs ? costItems : [], {
+      empty: state.loaded.costs ? 'Add amounts on the Costs page to see this.' : 'Loading…',
+      format: v => money(Math.round(v * 100) / 100), centerValue: money(Math.round(fixedMonthly())), centerLabel: 'per month' });
+
+    // Beta testers by where they are in the test.
+    const ts = state.testers;
+    donut('pieTesters', 'Beta testers', state.loaded.testers ? [
+      { label: 'Invited', value: ts.filter(x => x.status === 'invited').length, color: color(1) },
+      { label: 'Testing', value: ts.filter(x => x.status === 'testing').length, color: color(2) },
+      { label: 'Gave feedback', value: ts.filter(x => x.status === 'feedback').length, color: color(3) },
+      { label: 'Done', value: ts.filter(x => x.status === 'done').length, color: color(4) }
+    ] : [], { empty: state.loaded.testers ? 'No testers yet. Add them on the Beta testers page.' : 'Loading…',
+              centerValue: String(ts.length), centerLabel: ts.length === 1 ? 'tester' : 'testers' });
+  }
+
+  // ---------- To-dos ----------
+  function renderTodos() {
+    const wrap = $('todoGroups'); wrap.innerHTML = '';
+    GROUPS.forEach(([key, label]) => {
+      const items = state.todos.filter(t => (t.group || 'next') === key)
+        .sort((a, b) => (a.done - b.done) || (num(a.created) - num(b.created)));
+      const g = document.createElement('div'); g.className = 'group';
+      const openCount = items.filter(t => !t.done).length;
+      g.innerHTML = `<div class="group-head"><h3>${label}</h3><span class="chip${key === 'now' && openCount ? ' now' : ''}">${openCount} open</span></div>`;
+      if (!items.length) g.insertAdjacentHTML('beforeend', `<div class="empty">${state.loaded.todos ? 'Nothing here.' : 'Loading…'}</div>`);
+      items.forEach(t => {
+        const row = document.createElement('div'); row.className = 'row' + (t.done ? ' done' : '');
+        const cb = document.createElement('input'); cb.type = 'checkbox'; cb.checked = !!t.done; cb.id = 'todo-' + t.id;
+        cb.setAttribute('aria-label', (t.done ? 'Mark not done: ' : 'Mark done: ') + t.text);
+        cb.addEventListener('change', () => write(() => db.doc('todos/' + t.id).update({ done: cb.checked })));
+        const text = document.createElement('label'); text.className = 'text'; text.htmlFor = cb.id; text.textContent = t.text;
+        if (t.note) { const n = document.createElement('div'); n.className = 'meta'; n.textContent = t.note; text.appendChild(n); }
+        const del = document.createElement('button'); del.className = 'icon-btn'; del.type = 'button'; del.textContent = '✕';
+        del.setAttribute('aria-label', 'Delete: ' + t.text);
+        del.addEventListener('click', () => write(async () => { await db.doc('todos/' + t.id).delete(); toast('To-do deleted'); }));
+        row.append(cb, text, del); g.appendChild(row);
+      });
+      wrap.appendChild(g);
+    });
+    applyWriteMode();
+  }
+  $('todoForm').addEventListener('submit', (e) => {
+    e.preventDefault();
+    const text = $('todoText').value.trim(); if (!text) return;
+    const group = $('todoGroup').value;
+    write(async () => { await db.collection('todos').add({ text, group, done: false, created: Date.now() }); $('todoText').value = ''; toast('To-do added'); });
+  });
+
+  // ---------- Money ----------
+  function renderMonths() {
+    const body = $('monthRows'); body.innerHTML = '';
+    if (!state.months.length) {
+      body.innerHTML = `<tr><td colspan="9" class="meta" style="text-align:left">${state.loaded.months ? 'No months yet. Fill in the form below at the end of each month.' : 'Loading…'}</td></tr>`;
+    }
+    state.months.forEach(m => {
+      const p = profitOf(m);
+      const tr = document.createElement('tr');
+      tr.innerHTML = `<td>${monthLabel(m.month)}</td><td>${num(m.members)}</td><td>${money(num(m.revenue))}</td><td>${money(num(m.gumroadFees))}</td><td>${money(num(m.aiCost))}</td><td>${money(num(m.netlifyCost))}</td><td>${money(num(m.otherCosts))}</td><td class="${p >= 0 ? 'pos' : 'neg'}">${money(p)}</td>`;
+      const td = document.createElement('td');
+      const edit = document.createElement('button'); edit.className = 'icon-btn'; edit.type = 'button'; edit.textContent = 'Edit';
+      edit.setAttribute('aria-label', 'Edit ' + monthLabel(m.month));
+      edit.addEventListener('click', () => {
+        $('mMonth').value = m.month; $('mMembers').value = num(m.members); $('mRevenue').value = num(m.revenue);
+        $('mGumroad').value = num(m.gumroadFees); $('mAi').value = num(m.aiCost); $('mNetlify').value = num(m.netlifyCost); $('mOther').value = num(m.otherCosts);
+        $('monthForm').scrollIntoView({ block: 'center' });
+      });
+      const del = document.createElement('button'); del.className = 'icon-btn'; del.type = 'button'; del.textContent = '✕';
+      del.setAttribute('aria-label', 'Delete ' + monthLabel(m.month));
+      del.addEventListener('click', () => write(async () => { await db.doc('months/' + m.id).delete(); toast('Month deleted'); }));
+      td.append(edit, del); tr.appendChild(td); body.appendChild(tr);
+    });
+    renderChart();
+    applyWriteMode();
+  }
+  function renderChart() {
+    const box = $('profitChart');
+    const ms = state.months.slice(-12);
+    box.hidden = ms.length < 2;
+    if (ms.length < 2) return;
+    const W = 640, H = 200, padL = 56, padR = 12, padT = 16, padB = 30;
+    const vals = ms.map(profitOf);
+    const max = Math.max(0, ...vals), min = Math.min(0, ...vals);
+    const range = (max - min) || 1;
+    const y = (v) => padT + (max - v) / range * (H - padT - padB);
+    const bw = (W - padL - padR) / ms.length;
+    const cs = getComputedStyle(document.documentElement);
+    const good = cs.getPropertyValue('--good').trim(), bad = cs.getPropertyValue('--bad').trim(), line = cs.getPropertyValue('--line').trim(), muted = cs.getPropertyValue('--muted').trim();
+    let svg = `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Profit by month">`;
+    [max, 0, min].filter((v, i, a) => a.indexOf(v) === i).forEach(v => {
+      svg += `<line x1="${padL}" x2="${W - padR}" y1="${y(v)}" y2="${y(v)}" stroke="${line}" stroke-width="1"/>`;
+      svg += `<text x="${padL - 8}" y="${y(v) + 4}" text-anchor="end" font-size="11" fill="${muted}" font-family="Helvetica Neue, Helvetica, Arial, sans-serif">${money(Math.round(v))}</text>`;
+    });
+    ms.forEach((m, i) => {
+      const v = vals[i], x = padL + i * bw + bw * 0.2, w = bw * 0.6;
+      const top = y(Math.max(v, 0)), bottom = y(Math.min(v, 0));
+      svg += `<rect x="${x}" y="${top}" width="${w}" height="${Math.max(1, bottom - top)}" rx="3" fill="${v >= 0 ? good : bad}"/>`;
+      svg += `<text x="${x + w / 2}" y="${H - 10}" text-anchor="middle" font-size="11" fill="${muted}" font-family="Helvetica Neue, Helvetica, Arial, sans-serif">${monthLabel(m.month).replace(/ \d{4}$/, '')}</text>`;
+    });
+    box.innerHTML = svg + '</svg>';
+  }
+  $('monthForm').addEventListener('submit', (e) => {
+    e.preventDefault();
+    const month = $('mMonth').value; if (!/^\d{4}-\d{2}$/.test(month)) return;
+    const body = { month, members: num($('mMembers').value), revenue: num($('mRevenue').value), gumroadFees: num($('mGumroad').value),
+      aiCost: num($('mAi').value), netlifyCost: num($('mNetlify').value), otherCosts: num($('mOther').value) };
+    write(async () => { await db.doc('months/' + month).set(body); $('monthForm').reset(); toast(monthLabel(month) + ' saved'); });
+  });
+  $('mClear').addEventListener('click', () => $('monthForm').reset());
+
+  // ---------- Costs ----------
+  function renderCosts() {
+    const list = $('costList'); list.innerHTML = '';
+    if (!state.costs.length) { list.innerHTML = `<div class="empty">${state.loaded.costs ? 'No costs listed yet.' : 'Loading…'}</div>`; return; }
+    const order = { month: 0, year: 1, usage: 2, free: 3 };
+    state.costs.slice().sort((a, b) => (order[a.period] ?? 9) - (order[b.period] ?? 9) || String(a.name).localeCompare(String(b.name))).forEach(c => {
+      const row = document.createElement('div'); row.className = 'row';
+      const text = document.createElement('div'); text.className = 'text';
+      const name = document.createElement('strong'); name.textContent = c.name; text.appendChild(name);
+      if (c.note) { const n = document.createElement('div'); n.className = 'meta'; n.textContent = c.note; text.appendChild(n); }
+      const amt = document.createElement('div'); amt.className = 'cost-amount';
+      amt.textContent = c.period === 'free' ? 'Free' : c.period === 'usage' && !num(c.amount) ? 'Pay as you go' : `${money(num(c.amount))} ${PERIOD[c.period] || ''}`;
+      if (c.estimate) amt.insertAdjacentHTML('beforeend', '<span class="est">EST</span>');
+      const edit = document.createElement('button'); edit.className = 'icon-btn'; edit.type = 'button'; edit.textContent = 'Edit';
+      edit.setAttribute('aria-label', 'Edit ' + c.name);
+      edit.addEventListener('click', () => {
+        editingCostId = c.id; $('costName').value = c.name; $('costAmount').value = num(c.amount) || '';
+        $('costPeriod').value = c.period || 'month'; $('costNote').value = c.note || ''; $('costSave').textContent = 'Save';
+        $('costName').focus();
+      });
+      const del = document.createElement('button'); del.className = 'icon-btn'; del.type = 'button'; del.textContent = '✕';
+      del.setAttribute('aria-label', 'Delete ' + c.name);
+      del.addEventListener('click', () => write(async () => { await db.doc('costs/' + c.id).delete(); toast('Cost removed'); }));
+      row.append(text, amt, edit, del); list.appendChild(row);
+    });
+    applyWriteMode();
+  }
+  $('costForm').addEventListener('submit', (e) => {
+    e.preventDefault();
+    const name = $('costName').value.trim(); if (!name) return;
+    const body = { name, amount: num($('costAmount').value), period: $('costPeriod').value, note: $('costNote').value.trim(), estimate: false };
+    const id = editingCostId;
+    write(async () => {
+      if (id) await db.doc('costs/' + id).set(body); else await db.collection('costs').add(body);
+      editingCostId = null; $('costForm').reset(); $('costSave').textContent = 'Add'; toast(id ? 'Cost updated' : 'Cost added');
+    });
+  });
+
+  // ---------- Testers ----------
+  function renderTesters() {
+    const list = $('testerList'); list.innerHTML = '';
+    if (!state.testers.length) { list.innerHTML = `<div class="empty">${state.loaded.testers ? 'No testers yet. Add them below.' : 'Loading…'}</div>`; return; }
+    state.testers.slice().sort((a, b) => num(a.created) - num(b.created)).forEach(t => {
+      const row = document.createElement('div'); row.className = 'row';
+      const text = document.createElement('div'); text.className = 'text';
+      const name = document.createElement('strong'); name.textContent = t.name || '(no name)'; text.appendChild(name);
+      const meta = document.createElement('div'); meta.className = 'meta';
+      meta.textContent = [t.email, t.og ? 'OG badge on' : 'OG badge not on yet'].filter(Boolean).join(' · ');
+      text.appendChild(meta);
+      const sel = document.createElement('select'); sel.setAttribute('aria-label', 'Status for ' + (t.name || 'tester'));
+      Object.entries(TESTER_STATUS).forEach(([v, l]) => { const o = document.createElement('option'); o.value = v; o.textContent = l; if (t.status === v) o.selected = true; sel.appendChild(o); });
+      sel.disabled = !canWrite;
+      sel.addEventListener('change', () => write(() => db.doc('testers/' + t.id).update({ status: sel.value })));
+      const del = document.createElement('button'); del.className = 'icon-btn'; del.type = 'button'; del.textContent = '✕';
+      del.setAttribute('aria-label', 'Remove ' + (t.name || 'tester'));
+      del.addEventListener('click', () => write(async () => { await db.doc('testers/' + t.id).delete(); toast('Tester removed'); }));
+      row.append(text, sel, del); list.appendChild(row);
+    });
+    applyWriteMode();
+  }
+  $('testerForm').addEventListener('submit', (e) => {
+    e.preventDefault();
+    const name = $('testerName').value.trim(); const email = $('testerEmail').value.trim();
+    if (!name && !email) return;
+    write(async () => {
+      await db.collection('testers').add({ name, email, status: $('testerStatus').value, og: false, created: Date.now() });
+      $('testerForm').reset(); toast('Tester added');
+    });
+  });
+
+  // ---------- Pages: one section at a time, chosen from the menu (#todos etc. in the link opens that page) ----------
+  const PAGES = ['overview', 'todos', 'money', 'costs', 'testers', 'agency', 'plan'];
+  function showPage(name, focus) {
+    if (!PAGES.includes(name)) name = 'overview';
+    PAGES.forEach(p => { $(p).hidden = p !== name; });
+    document.querySelectorAll('nav.sections a').forEach(a => {
+      if (a.getAttribute('href') === '#' + name) a.setAttribute('aria-current', 'page'); else a.removeAttribute('aria-current');
+    });
+    try { localStorage.setItem('hq.page', name); } catch (e) {}
+    if (focus) { $('main').scrollTop = 0; const h2 = $(name).querySelector('h2'); if (h2) { h2.tabIndex = -1; h2.focus({ preventScroll: true }); } }
+  }
+  document.querySelectorAll('nav.sections a').forEach(a => a.addEventListener('click', (e) => {
+    e.preventDefault();
+    const name = a.getAttribute('href').slice(1);
+    try { history.replaceState(null, '', '#' + name); } catch (err) {}
+    showPage(name, true);
+  }));
+  let startPage = location.hash.slice(1);
+  if (!PAGES.includes(startPage)) { try { startPage = localStorage.getItem('hq.page') || 'overview'; } catch (e) { startPage = 'overview'; } }
+  showPage(startPage, false);
+
+  // ---------- Agency clients ----------
+  function renderAgency() {
+    const list = $('agencyList'); list.innerHTML = '';
+    if (!state.agency.length) { list.innerHTML = `<div class="empty">${state.loaded.agency ? 'No agency clients yet. Add one below.' : 'Loading…'}</div>`; return; }
+    state.agency.slice().sort((a, b) => num(b.created) - num(a.created)).forEach(c => {
+      const row = document.createElement('div'); row.className = 'row';
+      const text = document.createElement('div'); text.className = 'text';
+      const name = document.createElement('strong'); name.textContent = c.name || c.email; text.appendChild(name);
+      const meta = document.createElement('div'); meta.className = 'meta';
+      meta.textContent = [c.email, c.note, c.created ? 'added ' + new Date(c.created).toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' }) : ''].filter(Boolean).join(' · ');
+      text.appendChild(meta);
+      const active = c.active !== false;
+      const pill = document.createElement('span'); pill.className = 'pill ' + (active ? 'on' : 'off'); pill.textContent = active ? 'Lifetime member' : 'Paused';
+      const toggle = document.createElement('button'); toggle.className = 'icon-btn'; toggle.type = 'button'; toggle.textContent = active ? 'Pause' : 'Resume';
+      toggle.setAttribute('aria-label', (active ? 'Pause ' : 'Resume ') + (c.name || c.email));
+      toggle.addEventListener('click', () => write(async () => { await db.doc('agency/' + c.id).update({ active: !active }); toast(active ? 'Membership paused' : 'Membership back on'); }));
+      const del = document.createElement('button'); del.className = 'icon-btn'; del.type = 'button'; del.textContent = '✕';
+      del.setAttribute('aria-label', 'Remove ' + (c.name || c.email));
+      del.addEventListener('click', () => { if (confirm('Remove ' + (c.name || c.email) + '? Their free membership ends.')) write(async () => { await db.doc('agency/' + c.id).delete(); toast('Client removed'); }); });
+      row.append(text, pill, toggle, del); list.appendChild(row);
+    });
+    applyWriteMode();
+  }
+  $('agencyForm').addEventListener('submit', (e) => {
+    e.preventDefault();
+    const email = $('agencyEmail').value.trim().toLowerCase();
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { toast('Enter a valid email'); return; }
+    if (state.agency.some(c => c.email === email)) { toast('That email is already a client'); return; }
+    const name = $('agencyName').value.trim(), note = $('agencyNote').value.trim();
+    write(async () => { await db.collection('agency').add({ name, email, note, active: true, created: Date.now() }); $('agencyForm').reset(); toast((name || email) + ' added. They\'re unlocked when they sign in.'); });
+  });
+
+  function renderAll() { renderOverview(); renderTodos(); renderMonths(); renderCosts(); renderTesters(); renderAgency(); }
+  renderAll();
+
+
+  // ---------- Data: CreativeFlow's server (/api/hq), founder only ----------
+  // A small stand-in for the storage the page was written for: collection(...).add, doc(...).set /
+  // update / delete, and onSnapshot listeners that re-run whenever the data changes.
+  const HQ_API = 'https://creativeflow-ai.netlify.app/api/hq';
+  const CLERK_KEY = 'pk_live_Y2xlcmsuY3JlYXRpdmVmbG93Lm1lZGlhJA';
+  let clerk = null, hqData = null;
+  const listeners = [];
+  async function authHeaders() {
+    const token = clerk && clerk.session ? await clerk.session.getToken() : null;
+    if (!token) throw Object.assign(new Error('signed out'), { code: 'signed_out' });
+    return { Authorization: 'Bearer ' + token, 'Content-Type': 'application/json' };
+  }
+  function emitAll() {
+    listeners.forEach(l => {
+      const col = (hqData && hqData[l.name]) || {};
+      let docs = Object.entries(col).map(([id, d]) => ({ id, data: () => d }));
+      if (l.order) docs.sort((a, b) => String(a.data()[l.order] ?? '').localeCompare(String(b.data()[l.order] ?? '')));
+      try { l.cb({ docs }); } catch (e) { console.error(e); }
+    });
+  }
+  async function loadHq() {
+    const res = await fetch(HQ_API, { headers: await authHeaders(), cache: 'no-store' });
+    if (res.status === 403) throw Object.assign(new Error('not founder'), { code: 'not_founder' });
+    if (!res.ok) throw Object.assign(new Error('load failed'), { code: 'load_failed' });
+    hqData = await res.json();
+    emitAll();
+  }
+  async function sendOps(ops) {
+    const res = await fetch(HQ_API, { method: 'POST', headers: await authHeaders(), body: JSON.stringify({ ops }) });
+    if (!res.ok) throw Object.assign(new Error('save failed'), { code: 'save_failed' });
+    hqData = await res.json();
+    emitAll();
+  }
+  const newId = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
+  const hqDb = {
+    collection(name) {
+      const q = {
+        add: (data) => sendOps([{ op: 'set', collection: name, id: newId(), data }]),
+        orderBy: (field) => ({ onSnapshot: (cb, err) => { listeners.push({ name, cb, err, order: field }); if (hqData) emitAll(); } }),
+        onSnapshot: (cb, err) => { listeners.push({ name, cb, err }); if (hqData) emitAll(); }
+      };
+      return q;
+    },
+    doc(p) {
+      const [collection, id] = p.split('/');
+      return {
+        set: (data) => sendOps([{ op: 'set', collection, id, data }]),
+        update: (data) => sendOps([{ op: 'update', collection, id, data }]),
+        delete: () => sendOps([{ op: 'delete', collection, id }])
+      };
+    }
+  };
+
+  // ---------- Sign-in ----------
+  function gate(msg, showSignIn, showSignOut) {
+    $('gate').hidden = false;
+    $('gateMsg').textContent = msg;
+    $('signInMount').hidden = !showSignIn;
+    $('gateSignOut').hidden = !showSignOut;
+  }
+  async function signOut() { try { await clerk.signOut({ redirectUrl: location.href.split('#')[0] }); } catch (e) { location.reload(); } }
+  $('gateSignOut').addEventListener('click', signOut);
+  $('signOutBtn').addEventListener('click', signOut);
+  async function startHq() {
+    try {
+      await loadHq();
+    } catch (e) {
+      if (e.code === 'not_founder') { gate('This HQ is only for the CreativeFlow founder account. Sign out and sign in with the founder account.', false, true); return; }
+      gate("Couldn't load your HQ. Check your connection and reload the page.", false, true);
+      return;
+    }
+    $('gate').hidden = true;
+    $('signOutBtn').hidden = false;
+    setStatus('Saved automatically.');
+    db = hqDb;
+    const sub = (name, query, after) => query.onSnapshot(snap => {
+      state[name] = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+      state.loaded[name] = true;
+      after(); renderOverview();
+    }, handleError);
+    sub('todos', db.collection('todos'), renderTodos);
+    sub('months', db.collection('months').orderBy('month'), renderMonths);
+    sub('costs', db.collection('costs'), renderCosts);
+    sub('testers', db.collection('testers'), renderTesters);
+    sub('agency', db.collection('agency'), renderAgency);
+    // Changes made on another device show up when you come back to this tab.
+    document.addEventListener('visibilitychange', () => { if (!document.hidden) loadHq().catch(() => {}); });
+    setInterval(() => { if (!document.hidden) loadHq().catch(() => {}); }, 60000);
+  }
+  (async () => {
+    gate('Loading sign-in…', false, false);
+    const frontendApi = atob(CLERK_KEY.split('_')[2]).slice(0, -1);
+    await new Promise((resolve, reject) => {
+      const s = document.createElement('script');
+      s.src = 'https://' + frontendApi + '/npm/@clerk/clerk-js@5/dist/clerk.browser.js';
+      s.async = true;
+      s.crossOrigin = 'anonymous';
+      s.dataset.clerkPublishableKey = CLERK_KEY;
+      s.onload = resolve;
+      s.onerror = reject;
+      document.head.appendChild(s);
+    }).catch(() => { gate("Sign-in couldn't load. Check your connection and reload.", false, false); throw new Error('clerk'); });
+    clerk = typeof window.Clerk === 'function' ? new window.Clerk(CLERK_KEY) : window.Clerk;
+    await clerk.load();
+    if (clerk.user) { startHq(); return; }
+    gate('Sign in with your founder account.', true, false);
+    clerk.mountSignIn($('signInMount'), { routing: 'virtual', fallbackRedirectUrl: location.href.split('#')[0] });
+    clerk.addListener(({ user }) => { if (user && !db) { clerk.unmountSignIn($('signInMount')); startHq(); } });
+  })();
+
+</script>
+
+
+</body>
+</html>

@@ -240,6 +240,15 @@
       <div class="tile"><div class="label">Fixed costs / month</div><div class="value" id="tFixed">–</div><div class="note">from Costs (yearly ÷ 12)</div></div>
       <div class="tile"><div class="label">Open to-dos</div><div class="value" id="tTodos">–</div><div class="note" id="tTodosNote"></div></div>
     </div>
+    <div class="services-card">
+      <div class="services-head">
+        <h3>Services</h3>
+        <span class="services-summary" id="svcSummary">Checking…</span>
+        <button type="button" class="btn ghost small" id="svcRefresh">Check again</button>
+      </div>
+      <div class="services" id="svcList"></div>
+      <div class="services-legend"><span><i class="dot up"></i>Working</span><span><i class="dot degraded"></i>Slow or having problems</span><span><i class="dot down"></i>Down</span><span><i class="dot off"></i>Not switched on</span></div>
+    </div>
     <div class="pies">
       <div class="pie-card" id="pieTodos"><h3>To-dos</h3><div class="pie-empty">Loading…</div></div>
       <div class="pie-card" id="pieMoney"><h3>Where this month's money goes</h3><div class="pie-empty">Loading…</div></div>
@@ -848,6 +857,34 @@
     }
   };
 
+  // ---------- Services: live status lights (from /api/status) ----------
+  async function loadServices(fresh) {
+    const list = $('svcList'), sum = $('svcSummary');
+    if (fresh) sum.textContent = 'Checking…';
+    try {
+      const res = await fetch(HQ_API.replace('/api/hq', '/api/status') + (fresh ? '?fresh=1' : ''), { headers: await authHeaders(), cache: 'no-store' });
+      if (!res.ok) throw new Error(String(res.status));
+      const data = await res.json();
+      list.innerHTML = '';
+      data.services.forEach(s => {
+        const el = document.createElement('div');
+        el.className = 'svc';
+        el.title = s.name + ': ' + s.detail;
+        el.innerHTML = '<i class="dot ' + s.state + '" aria-hidden="true"></i><span class="svc-name"></span><span class="svc-meta"></span>';
+        el.querySelector('.svc-name').textContent = s.name;
+        el.querySelector('.svc-meta').textContent = s.role + ' · ' + s.detail;
+        el.setAttribute('aria-label', s.name + ': ' + ({ up: 'working', degraded: 'having problems', down: 'down', off: 'not switched on' }[s.state] || s.state) + '. ' + s.detail);
+        list.appendChild(el);
+      });
+      const bad = data.services.filter(s => s.state === 'down').length, warn = data.services.filter(s => s.state === 'degraded').length;
+      const time = new Date(data.checkedAt).toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' });
+      sum.textContent = (bad ? bad + ' down' : warn ? warn + ' having problems' : "Everything that's on is working") + ' · checked ' + time;
+    } catch (e) {
+      sum.textContent = "Couldn't check the services right now.";
+    }
+  }
+  $('svcRefresh').addEventListener('click', () => loadServices(true));
+
   // ---------- Sign-in ----------
   function gate(msg, showSignIn, showSignOut) {
     $('gate').hidden = false;
@@ -880,6 +917,8 @@
     sub('costs', db.collection('costs'), renderCosts);
     sub('testers', db.collection('testers'), renderTesters);
     sub('agency', db.collection('agency'), renderAgency);
+    loadServices(false);
+    setInterval(() => { if (!document.hidden) loadServices(false); }, 120000);
     // Changes made on another device show up when you come back to this tab.
     document.addEventListener('visibilitychange', () => { if (!document.hidden) loadHq().catch(() => {}); });
     setInterval(() => { if (!document.hidden) loadHq().catch(() => {}); }, 60000);
@@ -960,6 +999,25 @@
   .gate-brand { font-size: 18px; font-weight: 800; }
   .gate-brand .brand-logo { width: 36px; height: 36px; }
   .topbar .btn.ghost { color: #F5F2FB; box-shadow: inset 0 0 0 1px #352F44; }
+  /* Services: a light per service on the Overview */
+  .services-card { background: var(--panel); border-radius: 16px; box-shadow: var(--shadow); padding: 14px 16px; margin-bottom: 14px; }
+  .services-head { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; flex-wrap: wrap; }
+  .services-head h3 { margin: 0; font-size: 13.5px; }
+  .services-summary { flex: 1; font-size: 12.5px; color: var(--muted); }
+  .services { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 8px; }
+  .svc { display: grid; grid-template-columns: 12px 1fr; gap: 2px 10px; align-items: center; padding: 10px 12px; border-radius: 12px; background: rgba(255, 255, 255, 0.03); border: 1px solid var(--line); min-width: 0; }
+  .svc-name { font-weight: 700; font-size: 13.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .svc-meta { grid-column: 2; font-size: 12px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .dot { width: 10px; height: 10px; border-radius: 50%; display: inline-block; flex: none; }
+  .dot.up { background: #57D9A3; box-shadow: 0 0 0 3px rgba(87, 217, 163, 0.2), 0 0 10px rgba(87, 217, 163, 0.6); }
+  .dot.degraded { background: #F2C94C; box-shadow: 0 0 0 3px rgba(242, 201, 76, 0.2), 0 0 10px rgba(242, 201, 76, 0.5); }
+  .dot.down { background: #FF6B7D; box-shadow: 0 0 0 3px rgba(255, 107, 125, 0.2), 0 0 10px rgba(255, 107, 125, 0.6); animation: dotPulse 1.2s ease-in-out infinite; }
+  .dot.off { background: #4A4360; }
+  @keyframes dotPulse { 50% { opacity: 0.45; } }
+  .services-legend { display: flex; flex-wrap: wrap; gap: 6px 16px; margin-top: 10px; font-size: 12px; color: var(--muted); }
+  .services-legend span { display: inline-flex; align-items: center; gap: 6px; }
+  .services-legend .dot { width: 8px; height: 8px; animation: none; }
+  @media (prefers-reduced-motion: reduce) { .dot.down { animation: none; } }
 </style>
 </body>
 </html>

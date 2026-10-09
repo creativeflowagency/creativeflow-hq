@@ -373,7 +373,7 @@
 
   <section id="agency" aria-labelledby="agencyHead">
     <h2 id="agencyHead">Agency clients</h2>
-    <p class="section-sub">Clients of your agency get <strong>lifetime CreativeFlow membership</strong>. Add their name and the email they'll sign up with: when they sign in to CreativeFlow with that email (email, Google or Apple), the app and Adonis unlock automatically. No Gumroad needed.</p>
+    <p class="section-sub">Active agency clients get <strong>Creator Max</strong> (all AI and Max features). When a client leaves, press <strong>End</strong>: they keep <strong>Basic for life</strong>, and the AI and Max features stop. Add their name and the email they'll sign up with: when they sign in to CreativeFlow with that email (email, Google or Apple), it unlocks automatically. No Gumroad needed.</p>
     <div class="group" id="agencyList"><div class="empty">Loading…</div></div>
     <form class="add" id="agencyForm">
       <input type="text" id="agencyName" placeholder="Name" maxlength="80" aria-label="Client name">
@@ -867,13 +867,13 @@
       meta.textContent = [c.email, c.note, c.created ? 'added ' + new Date(c.created).toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' }) : ''].filter(Boolean).join(' · ');
       text.appendChild(meta);
       const active = c.active !== false;
-      const pill = document.createElement('span'); pill.className = 'pill ' + (active ? 'on' : 'off'); pill.textContent = active ? 'Lifetime member' : 'Paused';
-      const toggle = document.createElement('button'); toggle.className = 'icon-btn'; toggle.type = 'button'; toggle.textContent = active ? 'Pause' : 'Resume';
-      toggle.setAttribute('aria-label', (active ? 'Pause ' : 'Resume ') + (c.name || c.email));
-      toggle.addEventListener('click', () => write(async () => { await db.doc('agency/' + c.id).update({ active: !active }); toast(active ? 'Membership paused' : 'Membership back on'); }));
+      const pill = document.createElement('span'); pill.className = 'pill ' + (active ? 'on' : 'off'); pill.textContent = active ? 'Active client · Creator Max' : 'Ended · lifetime Basic';
+      const toggle = document.createElement('button'); toggle.className = 'icon-btn'; toggle.type = 'button'; toggle.textContent = active ? 'End' : 'Make active';
+      toggle.setAttribute('aria-label', (active ? 'Mark client ended: ' : 'Make client active: ') + (c.name || c.email));
+      toggle.addEventListener('click', () => write(async () => { await db.doc('agency/' + c.id).update({ active: !active }); toast(active ? 'Client ended: they keep Basic for life, AI and Max features stop' : 'Client active: Creator Max is back on'); }));
       const del = document.createElement('button'); del.className = 'icon-btn'; del.type = 'button'; del.textContent = '✕';
       del.setAttribute('aria-label', 'Remove ' + (c.name || c.email));
-      del.addEventListener('click', () => { if (confirm('Remove ' + (c.name || c.email) + '? Their free membership ends.')) write(async () => { await db.doc('agency/' + c.id).delete(); toast('Client removed'); }); });
+      del.addEventListener('click', () => { if (confirm('Remove ' + (c.name || c.email) + '? They lose CreativeFlow completely, including lifetime Basic. To keep their lifetime Basic, press End instead.')) write(async () => { await db.doc('agency/' + c.id).delete(); toast('Client removed'); }); });
       row.append(text, pill, toggle, del); list.appendChild(row);
     });
     applyWriteMode();
@@ -1010,7 +1010,24 @@
     const meta = document.createElement('div'); meta.className = 'bug-meta';
     [ago(r.receivedAt), c.version && 'v' + c.version, c.platform, c.screen && 'screen: ' + c.screen, c.viewport, c.email].filter(Boolean).forEach(t => { const s = document.createElement('span'); s.textContent = t; meta.appendChild(s); });
     row.append(what, actions, meta);
-    if (r.expected) { const ex = document.createElement('div'); ex.className = 'bug-extra'; ex.innerHTML = '<b>Expected:</b> '; ex.append(document.createTextNode(r.expected)); row.appendChild(ex); }
+    if (r.expected) { const ex = document.createElement('div'); ex.className = 'bug-extra'; ex.innerHTML = r.kind === 'profile' ? '<b>Profile:</b> ' : '<b>Expected:</b> '; ex.append(document.createTextNode(r.expected)); row.appendChild(ex); }
+    // A reported leaderboard profile: take it off the leaderboard for everyone (or put it back).
+    if (r.kind === 'profile' && r.pid) {
+      const hidden = !!(bugData.hiddenProfiles && bugData.hiddenProfiles[r.pid]);
+      const btn = document.createElement('button'); btn.type = 'button'; btn.className = 'btn ghost small';
+      btn.textContent = hidden ? 'Removed from leaderboard · Put back' : 'Remove from leaderboard';
+      btn.addEventListener('click', async () => {
+        btn.disabled = true;
+        try {
+          await adminFetch('', { method: 'POST', body: JSON.stringify({ profile: r.pid, hidden: !hidden, name: r.name || '' }) });
+          bugData.hiddenProfiles = bugData.hiddenProfiles || {};
+          if (hidden) delete bugData.hiddenProfiles[r.pid]; else bugData.hiddenProfiles[r.pid] = { at: Date.now(), name: r.name };
+          renderBugs();
+          toast(hidden ? 'Profile is back on the leaderboard' : 'Profile removed from the leaderboard');
+        } catch (e) { btn.disabled = false; toast("Couldn't save that"); }
+      });
+      const wrap = document.createElement('div'); wrap.className = 'bug-shot'; wrap.appendChild(btn); row.appendChild(wrap);
+    }
     if (r.hasScreenshot) {
       const shot = document.createElement('div'); shot.className = 'bug-shot';
       const btn = document.createElement('button'); btn.type = 'button'; btn.className = 'btn ghost small'; btn.textContent = 'Show screenshot';

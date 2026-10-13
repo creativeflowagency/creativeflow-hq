@@ -272,27 +272,71 @@
     <div class="next"><h3>Do next</h3><ol id="nextList"><li class="meta">Loading…</li></ol></div>
   </section>
 
-  <section id="jarvis" aria-labelledby="jarvisHead">
-    <div class="jv-head">
-      <div>
-        <h2 id="jarvisHead">Jarvis</h2>
-        <p class="section-sub">Your assistant across everything: HQ, the CreativeFlow app, app updates, Creactive and the website. It looks things up for you, and anything it wants to change waits for your Confirm.</p>
-      </div>
-      <div class="jv-tools">
-        <button type="button" class="btn small" id="jvTalk" hidden><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="7" y="2.5" width="6" height="10" rx="3"/><path d="M4.5 9.5a5.5 5.5 0 0 0 11 0M10 15v2.5"/></svg><span>Talk</span></button>
-        <button type="button" class="btn ghost small" id="jvVoice" aria-pressed="false" hidden>Voice: Off</button>
-        <button type="button" class="btn ghost small" id="jvNew">New chat</button>
-      </div>
+  <section id="jarvis" class="jv-hud" aria-labelledby="jarvisHead">
+    <h2 id="jarvisHead" class="jv-sr">Jarvis</h2>
+    <div class="jv-corner">
+      <button type="button" class="jv-icon" id="jvTextToggle" aria-pressed="false" aria-label="Show the conversation and type" title="Type / show conversation"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2.5" y="5" width="15" height="10" rx="2"/><path d="M6 8.5h.01M9 8.5h.01M12 8.5h.01M15 8.5h.01M6.5 12h7"/></svg></button>
+      <button type="button" class="jv-icon" id="jvNew" aria-label="New conversation" title="New conversation"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3.5 10a6.5 6.5 0 1 0 2-4.7"/><path d="M3.5 3.5v3h3"/></svg></button>
     </div>
-    <div class="jv-log" id="jvLog" aria-live="polite"></div>
-    <div class="jv-talkbar" id="jvTalkBar" hidden><span class="jv-dot"></span><span id="jvTalkText">Listening…</span><button type="button" class="btn ghost small" id="jvTalkEnd">End</button></div>
-    <form class="jv-form" id="jvForm">
-      <button class="btn ghost jv-mic" type="button" id="jvMic" aria-label="Speak to Jarvis" aria-pressed="false" hidden><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="7" y="2.5" width="6" height="10" rx="3"/><path d="M4.5 9.5a5.5 5.5 0 0 0 11 0M10 15v2.5"/></svg></button>
-      <textarea id="jvInput" rows="1" maxlength="8000" placeholder="Ask Jarvis anything…" aria-label="Message Jarvis"></textarea>
-      <button class="btn" type="submit" id="jvSend">Send</button>
-      <button class="btn ghost" type="button" id="jvStop" hidden>Stop</button>
-    </form>
-    <p class="hint">Jarvis can make mistakes, so check anything important. Messages go to Anthropic (Claude) to be answered.</p>
+    <div class="jv-stage">
+      <div class="jv-core" id="jvCore" data-state="idle" aria-hidden="true">
+        <svg viewBox="0 0 400 400" focusable="false">
+          <defs>
+            <radialGradient id="jvgGlow"><stop offset="0" stop-color="#39d5ff" stop-opacity=".38"/><stop offset=".55" stop-color="#1b7fb8" stop-opacity=".12"/><stop offset="1" stop-color="#000" stop-opacity="0"/></radialGradient>
+            <radialGradient id="jvgSphere" cx="42%" cy="36%" r="72%"><stop offset="0" stop-color="#c8f8ff" stop-opacity=".95"/><stop offset=".22" stop-color="#43d3ff" stop-opacity=".8"/><stop offset=".6" stop-color="#0b4f86" stop-opacity=".9"/><stop offset="1" stop-color="#03142a"/></radialGradient>
+            <clipPath id="jvgClip"><circle cx="200" cy="200" r="104"/></clipPath>
+            <filter id="jvgSoft" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="4"/></filter>
+          </defs>
+          <circle cx="200" cy="200" r="198" fill="url(#jvgGlow)"/>
+          <g class="jv-spin"><circle cx="200" cy="200" r="172" fill="none" stroke="#39d5ff" stroke-opacity=".35" stroke-width="1" stroke-dasharray="2 6"/></g>
+          <g class="jv-spin rev"><circle cx="200" cy="200" r="150" fill="none" stroke="#39d5ff" stroke-opacity=".5" stroke-width="1.5" stroke-dasharray="46 14 4 14"/></g>
+          <circle class="jv-ripple" cx="200" cy="200" r="110" fill="none" stroke="#7fe7ff" stroke-width="2"/>
+          <circle class="jv-ripple two" cx="200" cy="200" r="110" fill="none" stroke="#7fe7ff" stroke-width="2"/>
+          <g transform="rotate(-20 200 200)">
+            <ellipse class="jv-orbit" cx="200" cy="200" rx="186" ry="52" fill="none" stroke="#7fe7ff" stroke-opacity=".75" stroke-width="1.4"/>
+            <circle r="3.5" fill="#dffbff"><animateMotion dur="9s" repeatCount="indefinite" path="M14,200 a186,52 0 1,0 372,0 a186,52 0 1,0 -372,0"/></circle>
+          </g>
+          <g transform="rotate(28 200 200)">
+            <ellipse class="jv-orbit slow" cx="200" cy="200" rx="176" ry="38" fill="none" stroke="#39d5ff" stroke-opacity=".55" stroke-width="1.1"/>
+            <circle r="2.6" fill="#9ff0ff"><animateMotion dur="13s" repeatCount="indefinite" path="M376,200 a176,38 0 1,0 -352,0 a176,38 0 1,0 352,0"/></circle>
+          </g>
+          <g class="jv-sphere">
+            <circle cx="200" cy="200" r="106" fill="url(#jvgSphere)"/>
+            <g clip-path="url(#jvgClip)" fill="none" stroke="#a9f2ff" stroke-opacity=".32" stroke-width=".8">
+              <ellipse cx="200" cy="200" rx="106" ry="16"/><ellipse cx="200" cy="160" rx="97" ry="13"/><ellipse cx="200" cy="240" rx="97" ry="13"/><ellipse cx="200" cy="122" rx="74" ry="9"/><ellipse cx="200" cy="278" rx="74" ry="9"/>
+              <ellipse cx="200" cy="200" rx="106" ry="106"><animate attributeName="rx" values="106;0;106" dur="9s" repeatCount="indefinite"/></ellipse>
+              <ellipse cx="200" cy="200" rx="106" ry="106"><animate attributeName="rx" values="106;0;106" dur="9s" begin="-3s" repeatCount="indefinite"/></ellipse>
+              <ellipse cx="200" cy="200" rx="106" ry="106"><animate attributeName="rx" values="106;0;106" dur="9s" begin="-6s" repeatCount="indefinite"/></ellipse>
+            </g>
+            <g fill="#e6fdff">
+              <circle cx="160" cy="150" r="1.6"><animate attributeName="opacity" values="1;.2;1" dur="2.6s" repeatCount="indefinite"/></circle>
+              <circle cx="244" cy="170" r="1.3"><animate attributeName="opacity" values=".2;1;.2" dur="3.1s" repeatCount="indefinite"/></circle>
+              <circle cx="228" cy="252" r="1.5"><animate attributeName="opacity" values="1;.3;1" dur="2.2s" repeatCount="indefinite"/></circle>
+              <circle cx="150" cy="238" r="1.2"><animate attributeName="opacity" values=".3;1;.3" dur="3.6s" repeatCount="indefinite"/></circle>
+              <circle cx="262" cy="214" r="1.1"><animate attributeName="opacity" values="1;.2;1" dur="2.9s" repeatCount="indefinite"/></circle>
+            </g>
+            <circle cx="200" cy="200" r="106" fill="none" stroke="#9ff0ff" stroke-opacity=".85" stroke-width="1.6"/>
+            <text x="200" y="204" text-anchor="middle" font-size="36" font-weight="700" letter-spacing="9" fill="#39d5ff" filter="url(#jvgSoft)">JARVIS</text>
+            <text x="200" y="204" text-anchor="middle" font-size="36" font-weight="700" letter-spacing="9" fill="#f2fdff">JARVIS</text>
+            <text x="200" y="230" text-anchor="middle" font-size="11" font-weight="700" letter-spacing="6" fill="#9ff0ff">AI CORE</text>
+          </g>
+        </svg>
+      </div>
+      <div class="jv-state" id="jvState" aria-live="polite">Online</div>
+      <div class="jv-you" id="jvYou"></div>
+      <div class="jv-reply" id="jvReply" aria-live="polite"></div>
+      <div class="jv-cards" id="jvCards"></div>
+    </div>
+    <div class="jv-text" id="jvText" hidden>
+      <div class="jv-log" id="jvLog"></div>
+      <form class="jv-form" id="jvForm">
+        <textarea id="jvInput" rows="1" maxlength="8000" placeholder="Type to Jarvis…" aria-label="Message Jarvis"></textarea>
+        <button class="btn" type="submit" id="jvSend">Send</button>
+        <button class="btn ghost" type="button" id="jvStop" hidden>Stop</button>
+      </form>
+      <p class="hint">Jarvis can make mistakes, so check anything important. Messages go to Anthropic (Claude) to be answered.</p>
+    </div>
+    <button type="button" class="jv-wake" id="jvWake" hidden><span>Tap anywhere to wake Jarvis</span></button>
   </section>
 
   <section id="todos" aria-labelledby="todoHead">
@@ -839,6 +883,7 @@
       if (a.getAttribute('href') === '#' + name) a.setAttribute('aria-current', 'page'); else a.removeAttribute('aria-current');
     });
     try { localStorage.setItem('hq.page', name); } catch (e) {}
+    document.dispatchEvent(new CustomEvent('hq:page', { detail: name }));
     if (focus) { $('main').scrollTop = 0; const h2 = $(name).querySelector('h2'); if (h2) { h2.tabIndex = -1; h2.focus({ preventScroll: true }); } }
   }
   document.querySelectorAll('nav.sections a').forEach(a => a.addEventListener('click', (e) => {
@@ -960,11 +1005,12 @@
         if (Array.isArray(m.content)) m.content.forEach(b => { if (b.type === 'tool_use' && jv.proposals[b.id]) log.appendChild(jvCard(b.id)); });
       }
     });
+    jvRenderCards();
   }
   function jvSetBusy(on) {
     $('jvSend').hidden = on; $('jvStop').hidden = !on; $('jvInput').disabled = on;
     document.querySelectorAll('.jv-suggest button').forEach(b => { b.disabled = on; });
-    jvTalkBar();
+    jvCoreState();
   }
   // Makes a confirmed change with HQ's own signed-in calls.
   async function jvDo(a) {
@@ -996,6 +1042,7 @@
       jv.notes = [];
       jv.messages.push({ role: 'user', content });
       jvSave(); renderJarvis();
+      jvCaptionStart(text);
     }
     const live = jvNode('jv-msg assistant', '<span class="jv-status">Thinking…</span>');
     $('jvLog').appendChild(live); jvScroll();
@@ -1043,22 +1090,20 @@
   $('jvStop').addEventListener('click', () => { if (jvBusy) jvBusy.abort(); jvHush(); });
   $('jvNew').addEventListener('click', () => {
     if (jvBusy) return;
-    if (jv.messages.length && !confirm('Start a new chat? This one is cleared.')) return;
-    jvSetTalk(false); jvHush();
-    jv = { messages: [], proposals: {}, notes: [] }; jvSave(); renderJarvis();
+    jvHush();
+    jv = { messages: [], proposals: {}, notes: [] }; jvSave(); renderJarvis(); jvCaptionStart('');
   });
   renderJarvis();
 
-  // ---------- Jarvis voice: talk to it and hear it answer (the browser's own speech, no server) ----------
-  // Mic: say something and it's sent when you stop. Talk: hands-free (listen → answer out loud →
-  // listen again). Voice: read replies aloud. With one change waiting, saying "confirm" or "cancel"
-  // presses that button.
+  // ---------- Jarvis voice: always on while the Jarvis page is open (the browser's own speech) ----------
+  // Open Jarvis and it greets you, then listens; whatever you say is sent, the answer is spoken, and
+  // it listens again. It stops when you leave the page or the tab. Browsers only allow sound and the
+  // microphone after a tap on the page, so if Jarvis is the first thing opened it asks for one tap.
+  // With exactly one change waiting, saying "confirm" or "cancel" presses that button.
   const JvRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
   const jvCanSpeak = 'speechSynthesis' in window && 'SpeechSynthesisUtterance' in window;
-  let jvVoiceOn = false;
-  try { jvVoiceOn = localStorage.getItem('hq.jvVoice') === '1'; } catch (e) {}
-  let jvTalkOn = false, jvRec = null, jvSpeakBuf = '', jvSpeaking = 0, jvReplyDone = true, jvQuietTries = 0;
-  const jvSpeaks = () => jvCanSpeak && (jvVoiceOn || jvTalkOn);
+  let jvOn = false, jvAwake = false, jvRec = null, jvSpeakBuf = '', jvSpeaking = 0, jvReplyDone = true, jvGreeted = false, jvReplyText = '', jvQuick = 0, jvTyping = false;
+  const jvSpeaks = () => jvOn && jvAwake && jvCanSpeak;
   // A British voice if the device has one (like the films), otherwise any English voice.
   function jvVoicePick() {
     const voices = speechSynthesis.getVoices();
@@ -1069,122 +1114,152 @@
   }
   const jvPlain = (t) => String(t).replace(/```[\s\S]*?```/g, ' ').replace(/`([^`]*)`/g, '$1').replace(/\*\*(.+?)\*\*/g, '$1')
     .replace(/^#{1,4}\s+/gm, '').replace(/^\s*(?:[-*•]|\d+[.)])\s+/gm, '').replace(/https?:\/\/\S+/g, 'the link').replace(/\s+/g, ' ').trim();
+  function jvCoreState() {
+    const st = !jvOn ? 'idle' : !jvAwake ? 'asleep' : jvSpeaking ? 'speaking' : jvBusy ? 'thinking' : jvRec ? 'listening' : 'idle';
+    $('jvCore').dataset.state = st;
+    $('jvState').textContent = { asleep: 'Standing by', speaking: 'Speaking', thinking: 'Thinking', listening: 'Listening', idle: JvRecognition ? 'Online' : 'Online · type to talk' }[st];
+  }
   function jvSay(text) {
     const t = jvPlain(text);
-    if (!t || !jvCanSpeak) return;
+    if (!t || !jvSpeaks()) return;
     const u = new SpeechSynthesisUtterance(t);
     const v = jvVoicePick(); if (v) { u.voice = v; u.lang = v.lang; }
-    u.rate = 1.04;
-    jvSpeaking++; jvTalkBar();
-    u.onend = u.onerror = () => { jvSpeaking = Math.max(0, jvSpeaking - 1); jvAfterSpeech(); };
+    u.rate = 1.03; u.pitch = 0.95;
+    jvSpeaking++; jvCoreState();
+    u.onend = u.onerror = (e) => {
+      jvSpeaking = Math.max(0, jvSpeaking - 1);
+      if (e && e.error === 'not-allowed') { jvSleep(); return; } // the browser wants a tap first
+      jvAfterSpeech();
+    };
     try { speechSynthesis.speak(u); } catch (e) { jvSpeaking = Math.max(0, jvSpeaking - 1); jvAfterSpeech(); }
   }
-  // Speak finished sentences while the reply is still coming in.
+  function jvCaptionStart(said) {
+    $('jvYou').textContent = String(said || '').split('\n').filter(l => !JV_NOTE.test(l.trim())).join(' ').trim();
+    jvReplyText = ''; $('jvReply').textContent = ''; jvSpeakBuf = '';
+  }
+  // Show and speak finished sentences while the reply is still coming in.
   function jvVoiceFeed(piece) {
-    if (!jvSpeaks()) return;
     jvReplyDone = false;
+    jvReplyText += piece; $('jvReply').textContent = jvPlain(jvReplyText);
+    if (!jvSpeaks()) return;
     jvSpeakBuf += piece;
     const cut = Math.max(jvSpeakBuf.lastIndexOf('\n'), ...['. ', '! ', '? ', ': '].map(m => jvSpeakBuf.lastIndexOf(m) + 1));
     if (cut > 0) { jvSay(jvSpeakBuf.slice(0, cut)); jvSpeakBuf = jvSpeakBuf.slice(cut); }
   }
   function jvVoiceEnd(end) {
     jvReplyDone = true;
-    if (jvSpeaks()) {
-      if (jvSpeakBuf.trim()) jvSay(jvSpeakBuf);
-      if (end.type === 'error') jvSay(JV_ERRORS[end.code] || 'Something went wrong.');
-    }
+    if (jvSpeakBuf.trim()) jvSay(jvSpeakBuf);
     jvSpeakBuf = '';
+    if (end.type === 'error') { const msg = JV_ERRORS[end.code] || 'Something went wrong.'; $('jvReply').textContent = msg; jvSay(msg); }
     jvAfterSpeech();
   }
-  function jvHush() { jvSpeakBuf = ''; jvSpeaking = 0; if (jvCanSpeak) speechSynthesis.cancel(); jvTalkBar(); }
-  // In talk mode, listen again once Jarvis has finished answering out loud.
+  function jvHush() { jvSpeakBuf = ''; jvSpeaking = 0; if (jvCanSpeak) { try { speechSynthesis.cancel(); } catch (e) {} } jvCoreState(); }
+  function jvStopListening() { if (jvRec) { const r = jvRec; jvRec = null; try { r.abort(); } catch (e) {} } jvCoreState(); }
+  // Listen again once Jarvis has finished answering out loud.
   function jvAfterSpeech() {
-    jvTalkBar();
-    if (jvTalkOn && jvReplyDone && !jvSpeaking && !jvBusy && !jvRec) setTimeout(() => { if (jvTalkOn && !jvSpeaking && !jvBusy && !jvRec) jvListen(); }, 350);
-  }
-  function jvTalkBar() {
-    const bar = $('jvTalkBar');
-    bar.hidden = !jvTalkOn;
-    const mode = jvRec ? 'listening' : jvSpeaking ? 'speaking' : jvBusy ? 'thinking' : 'listening';
-    bar.className = 'jv-talkbar ' + mode;
-    $('jvTalkText').textContent = { listening: jvRec ? 'Listening…' : 'Talk mode', speaking: 'Jarvis is speaking…', thinking: 'Jarvis is thinking…' }[mode];
-    $('jvTalk').setAttribute('aria-pressed', String(jvTalkOn));
+    jvCoreState();
+    if (!jvOn || !jvAwake || !jvReplyDone || jvSpeaking || jvBusy || jvRec || jvTyping) return;
+    setTimeout(() => { if (jvOn && jvAwake && !jvSpeaking && !jvBusy && !jvRec && !jvTyping) jvListen(); }, jvQuick > 4 ? 3000 : 300);
   }
   // "confirm" / "cancel" said out loud presses the button when exactly one change is waiting.
   function jvVoiceCommand(said) {
     const n = said.toLowerCase().replace(/[^a-z ]/g, '').replace(/\s+/g, ' ').trim();
     const waiting = Object.keys(jv.proposals).filter(id => jv.proposals[id].state === 'pending');
     if (waiting.length !== 1) return false;
-    const yes = ['confirm', 'confirm it', 'yes confirm', 'confirmed', 'do it', 'yes do it', 'go ahead'];
-    const no = ['cancel', 'cancel it', 'no cancel', 'never mind', 'dont do it'];
-    if (yes.includes(n)) { jvDecide(waiting[0], true).then(() => { if (jvSpeaks()) jvSay(jv.proposals[waiting[0]].state === 'done' ? 'Done.' : "I couldn't do that one."); else jvAfterSpeech(); }); return true; }
-    if (no.includes(n)) { jvDecide(waiting[0], false).then(() => { if (jvSpeaks()) jvSay('Cancelled.'); else jvAfterSpeech(); }); return true; }
-    return false;
+    const yes = ['confirm', 'confirm it', 'yes confirm', 'confirmed', 'do it', 'yes do it', 'go ahead', 'yes please'];
+    const no = ['cancel', 'cancel it', 'no cancel', 'never mind', 'dont do it', 'no thanks'];
+    if (!yes.includes(n) && !no.includes(n)) return false;
+    jvCaptionStart(said);
+    jvDecide(waiting[0], yes.includes(n)).then(() => {
+      const st = jv.proposals[waiting[0]].state;
+      const line = st === 'done' ? 'Done, sir.' : st === 'cancelled' ? 'Cancelled.' : "I couldn't do that one, sir.";
+      $('jvReply').textContent = line; jvSay(line); jvAfterSpeech();
+    });
+    return true;
   }
-  function jvMicState(on) { $('jvMic').setAttribute('aria-pressed', String(on)); jvTalkBar(); }
   function jvListen() {
-    if (!JvRecognition || jvBusy) return;
-    if (jvRec) { try { jvRec.abort(); } catch (e) {} jvRec = null; }
+    if (!JvRecognition || !jvOn || !jvAwake || jvBusy || jvSpeaking || jvRec || jvTyping) return;
     const rec = new JvRecognition();
     rec.lang = navigator.language || 'en-US';
     rec.interimResults = true;
-    rec.continuous = false;
+    rec.continuous = true;
+    const began = Date.now();
     let heard = '';
     rec.onresult = (e) => {
-      let interim = '';
-      for (let i = e.resultIndex; i < e.results.length; i++) {
-        if (e.results[i].isFinal) heard += e.results[i][0].transcript; else interim += e.results[i][0].transcript;
-      }
-      $('jvInput').value = (heard + interim).trim();
+      let interim = '', final = '';
+      for (let i = 0; i < e.results.length; i++) { if (e.results[i].isFinal) final += e.results[i][0].transcript; else interim += e.results[i][0].transcript; }
+      $('jvYou').textContent = (final + interim).trim();
+      if (final.trim()) { heard = final.trim(); try { rec.stop(); } catch (err) {} }
     };
     rec.onerror = (e) => {
-      if (e.error === 'not-allowed' || e.error === 'service-not-allowed') { toast('Allow the microphone to talk to Jarvis'); jvSetTalk(false); }
-      else if (e.error === 'network') toast("Speech recognition couldn't connect");
+      if (e.error === 'not-allowed' || e.error === 'service-not-allowed') jvSleep(e.error === 'service-not-allowed' || (navigator.userActivation && navigator.userActivation.hasBeenActive) ? 'mic' : 'tap');
     };
     rec.onend = () => {
       if (jvRec !== rec) return;
-      jvRec = null; jvMicState(false);
-      const said = heard.trim() || $('jvInput').value.trim();
-      $('jvInput').value = '';
-      if (said) { jvQuietTries = 0; if (!jvVoiceCommand(said)) jvSend(said); }
-      else if (jvTalkOn) {
-        // Nothing heard: try a couple more times, then end talk mode.
-        if (++jvQuietTries <= 2) jvListen(); else { jvSetTalk(false); toast('Talk mode ended'); }
-      }
+      jvRec = null;
+      jvQuick = Date.now() - began < 1500 ? jvQuick + 1 : 0; // keeps a broken mic from restarting in a tight loop
+      if (heard) { if (!jvVoiceCommand(heard)) jvSend(heard); }
+      else jvAfterSpeech();
     };
-    jvRec = rec; jvMicState(true);
-    try { rec.start(); } catch (e) { jvRec = null; jvMicState(false); }
+    jvRec = rec; jvCoreState();
+    try { rec.start(); } catch (e) { jvRec = null; jvCoreState(); }
   }
-  // Some phones only allow speech that starts from a tap, so the first tap "unlocks" it.
-  function jvUnlockSpeech() { if (jvCanSpeak) { try { speechSynthesis.cancel(); speechSynthesis.speak(new SpeechSynthesisUtterance('')); } catch (e) {} } }
-  function jvSetTalk(on) {
-    jvTalkOn = on; jvQuietTries = 0;
-    if (!on && jvRec) { try { jvRec.abort(); } catch (e) {} jvRec = null; jvMicState(false); }
-    if (on) { jvUnlockSpeech(); jvHush(); jvListen(); }
-    jvTalkBar();
+  function jvGreet() {
+    if (jvGreeted) return jvAfterSpeech();
+    jvGreeted = true;
+    const h = new Date().getHours();
+    const line = (h < 5 ? 'Working late, sir.' : h < 12 ? 'Good morning, sir.' : h < 18 ? 'Good afternoon, sir.' : 'Good evening, sir.') + ' Jarvis online. How can I help?';
+    if (!jv.messages.length || !$('jvReply').textContent) $('jvReply').textContent = line;
+    if (jvCanSpeak) jvSay(line); else jvAfterSpeech();
   }
-  function jvSetVoice(on) {
-    jvVoiceOn = on;
-    try { localStorage.setItem('hq.jvVoice', on ? '1' : '0'); } catch (e) {}
-    $('jvVoice').textContent = 'Voice: ' + (on ? 'On' : 'Off');
-    $('jvVoice').setAttribute('aria-pressed', String(on));
-    if (on) jvUnlockSpeech(); else if (!jvTalkOn) jvHush();
+  // Needs a tap ('tap'), or the microphone is blocked in the browser settings ('mic').
+  function jvSleep(why) {
+    jvAwake = false; jvStopListening(); jvHush();
+    const wake = $('jvWake');
+    wake.querySelector('span').textContent = why === 'mic' ? 'Allow the microphone for this site, then tap' : 'Tap anywhere to wake Jarvis';
+    wake.hidden = false; jvCoreState();
   }
-  if (JvRecognition) {
-    $('jvMic').hidden = false; $('jvTalk').hidden = false;
-    $('jvMic').addEventListener('click', () => {
-      if (jvRec) { try { jvRec.stop(); } catch (e) {} return; } // stop and send what was heard
-      jvUnlockSpeech(); jvHush(); jvListen();
-    });
-    $('jvTalk').addEventListener('click', () => jvSetTalk(!jvTalkOn));
+  function jvWakeUp() {
+    $('jvWake').hidden = true; jvAwake = true; jvQuick = 0;
+    if (jvCanSpeak) { try { speechSynthesis.cancel(); speechSynthesis.speak(new SpeechSynthesisUtterance('')); } catch (e) {} }
+    jvGreet();
   }
-  $('jvTalkEnd').addEventListener('click', () => { jvSetTalk(false); jvHush(); });
-  if (jvCanSpeak) {
-    $('jvVoice').hidden = false;
-    $('jvVoice').addEventListener('click', () => jvSetVoice(!jvVoiceOn));
-    jvSetVoice(jvVoiceOn);
-    speechSynthesis.getVoices(); // starts loading the device's voices
+  function jvStart() {
+    if (jvOn) return;
+    jvOn = true;
+    if (!JvRecognition && !jvCanSpeak) { jvSetText(true); jvAwake = true; jvCoreState(); return; }
+    if (!JvRecognition) jvSetText(true); // can speak but not listen (e.g. Firefox): type instead
+    if (navigator.userActivation && !navigator.userActivation.hasBeenActive) { jvSleep('tap'); return; }
+    jvWakeUp();
   }
+  function jvPause() {
+    if (!jvOn) return;
+    jvOn = false; jvStopListening(); jvHush(); $('jvWake').hidden = true; jvCoreState();
+  }
+  function jvSetText(on) {
+    $('jvText').hidden = !on;
+    $('jvTextToggle').setAttribute('aria-pressed', String(on));
+    try { localStorage.setItem('hq.jvText', on ? '1' : '0'); } catch (e) {}
+    if (on) jvScroll();
+  }
+  function jvRenderCards() {
+    const box = $('jvCards'); box.innerHTML = '';
+    const waiting = Object.keys(jv.proposals).filter(id => jv.proposals[id].state === 'pending' || jv.proposals[id].state === 'working');
+    waiting.forEach(id => box.appendChild(jvCard(id)));
+    if (waiting.length === 1 && (window.SpeechRecognition || window.webkitSpeechRecognition)) box.appendChild(jvNode('jv-hint', 'Say "confirm" or "cancel"'));
+  }
+  // Runs only while the Jarvis page is showing, you're signed in and the tab is in front.
+  function jvCheckPage() { if (db && !$('jarvis').hidden && !document.hidden) jvStart(); else jvPause(); }
+  document.addEventListener('hq:page', jvCheckPage);
+  document.addEventListener('hq:ready', jvCheckPage);
+  document.addEventListener('visibilitychange', jvCheckPage);
+  $('jvWake').addEventListener('click', jvWakeUp);
+  $('jvTextToggle').addEventListener('click', () => jvSetText($('jvText').hidden));
+  $('jvInput').addEventListener('focus', () => { jvTyping = true; jvStopListening(); });
+  $('jvInput').addEventListener('blur', () => { jvTyping = false; jvAfterSpeech(); });
+  try { if (localStorage.getItem('hq.jvText') === '1') jvSetText(true); } catch (e) {}
+  if (jvCanSpeak) speechSynthesis.getVoices(); // starts loading the device's voices
+  jvRenderCards(); jvCoreState(); jvCheckPage();
 
   // ---------- Agency clients ----------
   function renderAgency() {
@@ -1473,6 +1548,7 @@
     $('signOutBtn').hidden = false;
     setStatus('Saved automatically.');
     db = hqDb;
+    document.dispatchEvent(new Event('hq:ready'));
     const sub = (name, query, after) => query.onSnapshot(snap => {
       state[name] = snap.docs.map(d => ({ id: d.id, ...d.data() }));
       state.loaded[name] = true;
@@ -1638,20 +1714,47 @@
   .jv-form textarea { flex: 1; min-width: 0; min-height: 44px; max-height: 180px; resize: none; font: inherit; font-size: 14px; line-height: 1.45; color: var(--ink); background: #0D0A14; border: 1px solid var(--field); border-radius: 12px; padding: 11px 12px; }
   .jv-form textarea:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; border-color: var(--accent); }
   .jv-form .btn { height: 44px; }
-  .jv-tools { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 6px; flex-shrink: 0; margin-top: 4px; }
-  .jv-tools .btn { display: inline-flex; align-items: center; gap: 5px; }
-  @media (max-width: 700px) { .jv-head { flex-direction: column; gap: 0; } .jv-tools { justify-content: flex-start; margin: 0 0 14px; } }
-  .jv-tools svg, .jv-mic svg { width: 16px; height: 16px; }
-  .jv-tools .btn[aria-pressed="true"] { box-shadow: inset 0 0 0 1px #8358FF; color: #CDBDF5; }
-  .jv-mic { width: 44px; padding: 0; display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; }
-  .jv-mic[aria-pressed="true"] { background: #FF6B7D; color: #FFFFFF; box-shadow: none; animation: jvPulse 1.4s ease-in-out infinite; }
-  @keyframes jvPulse { 0%, 100% { box-shadow: 0 0 0 0 rgba(255, 107, 125, 0.45); } 50% { box-shadow: 0 0 0 8px rgba(255, 107, 125, 0); } }
-  .jv-talkbar { position: sticky; bottom: 66px; z-index: 1; display: flex; align-items: center; gap: 10px; margin-top: 10px; padding: 8px 10px 8px 14px; border-radius: 999px; background: rgba(131, 88, 255, 0.16); border: 1px solid rgba(131, 88, 255, 0.5); font-size: 13.5px; font-weight: 600; }
-  .jv-talkbar #jvTalkText { flex: 1; }
-  .jv-dot { width: 10px; height: 10px; border-radius: 50%; background: #8358FF; flex-shrink: 0; }
-  .jv-talkbar.listening .jv-dot { background: #FF6B7D; animation: jvPulse 1.4s ease-in-out infinite; }
-  .jv-talkbar.speaking .jv-dot { background: #57D9A3; }
-  @media (prefers-reduced-motion: reduce) { .jv-mic[aria-pressed="true"], .jv-talkbar.listening .jv-dot { animation: none; } }
+  /* Jarvis: voice-first HUD */
+  .jv-sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+  .jv-hud { position: relative; display: flex; flex-direction: column; align-items: center; min-height: calc(100dvh - 120px); padding: 20px 16px 24px; border-radius: 24px; overflow: hidden;
+    background: radial-gradient(55% 45% at 50% 34%, rgba(57, 213, 255, 0.14), transparent 70%), linear-gradient(rgba(57, 213, 255, 0.05) 1px, transparent 1px) 0 0 / 100% 32px, linear-gradient(90deg, rgba(57, 213, 255, 0.05) 1px, transparent 1px) 0 0 / 32px 100%, #040D18;
+    border: 1px solid rgba(57, 213, 255, 0.22); box-shadow: inset 0 0 80px rgba(57, 213, 255, 0.06); color: #E9FBFF; }
+  .jv-stage { flex: 1; width: 100%; max-width: 680px; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; }
+  .jv-core { width: min(420px, 80vw); aspect-ratio: 1; transition: opacity .4s, filter .4s; }
+  .jv-core svg { width: 100%; height: 100%; overflow: visible; font-family: var(--font-display, inherit); }
+  .jv-spin { transform-box: fill-box; transform-origin: center; animation: jvSpin 40s linear infinite; }
+  .jv-spin.rev { animation-direction: reverse; animation-duration: 26s; }
+  .jv-orbit { stroke-dasharray: 3 9; animation: jvDash 6s linear infinite; } .jv-orbit.slow { animation-duration: 9s; }
+  .jv-sphere { transform-box: fill-box; transform-origin: center; }
+  .jv-ripple { transform-box: fill-box; transform-origin: center; opacity: 0; }
+  @keyframes jvSpin { to { transform: rotate(360deg); } }
+  @keyframes jvDash { to { stroke-dashoffset: -120; } }
+  @keyframes jvRipple { from { transform: scale(1); opacity: .75; } to { transform: scale(1.5); opacity: 0; } }
+  @keyframes jvTalk { from { transform: scale(1); } to { transform: scale(1.05); } }
+  @keyframes jvBreathe { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.015); } }
+  .jv-core .jv-sphere { animation: jvBreathe 4s ease-in-out infinite; }
+  .jv-core[data-state="listening"] .jv-ripple { animation: jvRipple 2s ease-out infinite; }
+  .jv-core[data-state="listening"] .jv-ripple.two { animation-delay: 1s; }
+  .jv-core[data-state="thinking"] .jv-spin { animation-duration: 3s; } .jv-core[data-state="thinking"] .jv-orbit { animation-duration: 1s; }
+  .jv-core[data-state="speaking"] .jv-sphere { animation: jvTalk .38s ease-in-out infinite alternate; }
+  .jv-core[data-state="speaking"] { filter: drop-shadow(0 0 22px rgba(57, 213, 255, 0.55)); }
+  .jv-core[data-state="asleep"] { opacity: .5; filter: saturate(.5); }
+  .jv-state { margin-top: 4px; font-size: 12.5px; font-weight: 700; letter-spacing: .34em; text-transform: uppercase; color: #7FE7FF; text-shadow: 0 0 12px rgba(57, 213, 255, 0.7); }
+  .jv-you { margin-top: 16px; min-height: 1.4em; color: #8FB3C9; font-size: 15px; }
+  .jv-reply { margin-top: 8px; max-height: 10em; overflow-y: auto; color: #E9FBFF; font-size: clamp(17px, 2.4vw, 21px); line-height: 1.45; }
+  .jv-cards { display: flex; flex-direction: column; align-items: center; gap: 8px; margin-top: 14px; width: 100%; }
+  .jv-cards .jv-proposal { align-self: center; background: rgba(57, 213, 255, 0.08); border-color: rgba(57, 213, 255, 0.55); }
+  .jv-cards .jv-hint { font-size: 12px; letter-spacing: .12em; text-transform: uppercase; color: #7FE7FF; }
+  .jv-corner { position: absolute; top: 14px; right: 14px; z-index: 2; display: flex; gap: 8px; }
+  .jv-icon { width: 38px; height: 38px; display: grid; place-items: center; border-radius: 50%; cursor: pointer; color: #7FE7FF; background: rgba(4, 18, 31, 0.7); border: 1px solid rgba(57, 213, 255, 0.35); }
+  .jv-icon svg { width: 18px; height: 18px; }
+  .jv-icon[aria-pressed="true"] { background: rgba(57, 213, 255, 0.18); }
+  .jv-text { width: 100%; max-width: 760px; margin-top: 18px; }
+  .jv-text .jv-form { background: transparent; position: static; }
+  .jv-text .jv-msg.assistant { background: rgba(4, 18, 31, 0.8); border-color: rgba(57, 213, 255, 0.25); }
+  .jv-wake { position: absolute; inset: 0; z-index: 3; display: flex; align-items: flex-end; justify-content: center; padding: 0 16px 14%; border: 0; cursor: pointer; background: rgba(2, 8, 16, 0.45); color: #E9FBFF; font: inherit; font-size: 14px; font-weight: 700; letter-spacing: .26em; text-transform: uppercase; }
+  .jv-wake span { padding: 10px 18px; border-radius: 999px; border: 1px solid rgba(57, 213, 255, 0.55); background: rgba(4, 18, 31, 0.8); text-shadow: 0 0 10px rgba(57, 213, 255, 0.7); }
+  @media (prefers-reduced-motion: reduce) { .jv-spin, .jv-orbit, .jv-core .jv-sphere, .jv-core[data-state] .jv-ripple, .jv-core[data-state="speaking"] .jv-sphere { animation: none; } }
 </style>
 </body>
 </html>

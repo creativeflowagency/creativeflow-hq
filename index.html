@@ -224,6 +224,7 @@
   <aside class="side">
     <nav class="sections" aria-label="Pages">
       <a href="#overview"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 9.5 10 4l7 5.5V16a1 1 0 0 1-1 1h-3.5v-4.5h-5V17H4a1 1 0 0 1-1-1z"/></svg><span>Overview</span></a>
+      <a href="#jarvis"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 2.5l1.7 4.3 4.3 1.7-4.3 1.7L10 14.5l-1.7-4.3L4 8.5l4.3-1.7z"/><path d="M15.5 13l.7 1.8 1.8.7-1.8.7-.7 1.8-.7-1.8-1.8-.7 1.8-.7z"/></svg><span>Jarvis</span></a>
       <a href="#todos"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.5" y="3.5" width="13" height="13" rx="2.5"/><path d="m7 10 2 2 4-4"/></svg><span>To-dos</span></a>
       <a href="#money"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 3v14"/><path d="M13.5 6.5c0-1.4-1.6-2.3-3.5-2.3S6.5 5 6.5 6.6c0 3.6 7 1.9 7 5.4 0 1.5-1.6 2.5-3.5 2.5s-3.5-1-3.5-2.4"/></svg><span>Money</span></a>
       <a href="#costs"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 3h10v14l-2-1.3-1.7 1.3L10 15.7 8.7 17 7 15.7 5 17z"/><path d="M7.5 7h5M7.5 10h5"/></svg><span>Costs</span></a>
@@ -269,6 +270,23 @@
       <div class="pie-card" id="pieTesters"><h3>Beta testers</h3><div class="pie-empty">Loading…</div></div>
     </div>
     <div class="next"><h3>Do next</h3><ol id="nextList"><li class="meta">Loading…</li></ol></div>
+  </section>
+
+  <section id="jarvis" aria-labelledby="jarvisHead">
+    <div class="jv-head">
+      <div>
+        <h2 id="jarvisHead">Jarvis</h2>
+        <p class="section-sub">Your assistant across everything: HQ, the CreativeFlow app, app updates, Creactive and the website. It looks things up for you, and anything it wants to change waits for your Confirm.</p>
+      </div>
+      <button type="button" class="btn ghost small" id="jvNew">New chat</button>
+    </div>
+    <div class="jv-log" id="jvLog" aria-live="polite"></div>
+    <form class="jv-form" id="jvForm">
+      <textarea id="jvInput" rows="1" maxlength="8000" placeholder="Ask Jarvis anything…" aria-label="Message Jarvis"></textarea>
+      <button class="btn" type="submit" id="jvSend">Send</button>
+      <button class="btn ghost" type="button" id="jvStop" hidden>Stop</button>
+    </form>
+    <p class="hint">Jarvis can make mistakes, so check anything important. Messages go to Anthropic (Claude) to be answered.</p>
   </section>
 
   <section id="todos" aria-labelledby="todoHead">
@@ -807,7 +825,7 @@
   });
 
   // ---------- Pages: one section at a time, chosen from the menu (#todos etc. in the link opens that page) ----------
-  const PAGES = ['overview', 'todos', 'money', 'costs', 'testers', 'bugs', 'leads', 'agency', 'plan'];
+  const PAGES = ['overview', 'jarvis', 'todos', 'money', 'costs', 'testers', 'bugs', 'leads', 'agency', 'plan'];
   function showPage(name, focus) {
     if (!PAGES.includes(name)) name = 'overview';
     PAGES.forEach(p => { $(p).hidden = p !== name; });
@@ -854,6 +872,173 @@
     });
     applyWriteMode();
   }
+
+  // ---------- Jarvis: the founder's AI assistant (/api/jarvis) ----------
+  // The conversation is kept in this browser exactly as the server sent it (Claude's message
+  // format, thinking included) and only ever added to. Changes Jarvis proposes wait here for
+  // Confirm; HQ makes them itself, then tells Jarvis what happened at the start of the next message.
+  const jarvisApi = () => HQ_API.replace('/api/hq', '/api/jarvis'); // HQ_API is defined further down
+  const JV_KEY = 'hq.jarvis';
+  const JV_SUGGESTIONS = ["How's the business this month?", "Any new leads I haven't replied to?", 'What did we ship in the latest app update?', "What's open in bugs right now?", 'Plan my day from my to-dos'];
+  const JV_ERRORS = {
+    refused: "Jarvis couldn't help with that one. Try asking another way.",
+    rate_limited: 'Too many requests right now. Try again in a minute.',
+    server_config: "Jarvis isn't set up on the server (check the Anthropic key and credits in Netlify).",
+    conversation_too_long: 'This chat got too long. Press New chat to start fresh.',
+    too_many_steps: 'That took too many steps. Try asking in smaller pieces.',
+    too_long: 'That answer got too long. Try asking for less at once.',
+    not_founder: 'Jarvis only works on the founder account.',
+    signed_out: 'You were signed out. Reload the page and sign in.',
+    network: "Couldn't reach the server. Check your connection and try again."
+  };
+  let jv = { messages: [], proposals: {}, notes: [] };
+  try {
+    const saved = JSON.parse(localStorage.getItem(JV_KEY) || 'null');
+    if (saved && Array.isArray(saved.messages)) jv = { messages: saved.messages, proposals: saved.proposals || {}, notes: saved.notes || [] };
+  } catch (e) {}
+  let jvBusy = null; // AbortController while a reply is coming in
+  function jvSave() { try { localStorage.setItem(JV_KEY, JSON.stringify(jv)); } catch (e) {} }
+  const jvEsc = (t) => String(t).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  // A little formatting for replies: paragraphs, bullet lists, **bold** and `code`. Text is escaped first.
+  function jvFormat(text) {
+    const inline = (t) => jvEsc(t).replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>').replace(/`([^`]+)`/g, '<code>$1</code>');
+    const out = []; let list = null;
+    String(text).split('\n').forEach(line => {
+      const item = line.match(/^\s*(?:[-*•]|\d+[.)])\s+(.*)$/);
+      if (item) { (list = list || []).push('<li>' + inline(item[1]) + '</li>'); return; }
+      if (list) { out.push('<ul>' + list.join('') + '</ul>'); list = null; }
+      const head = line.match(/^#{1,4}\s+(.*)$/);
+      if (head) out.push('<p><strong>' + inline(head[1]) + '</strong></p>');
+      else if (line.trim()) out.push('<p>' + inline(line) + '</p>');
+    });
+    if (list) out.push('<ul>' + list.join('') + '</ul>');
+    return out.join('');
+  }
+  const jvText = (content) => typeof content === 'string' ? content : content.filter(b => b.type === 'text').map(b => b.text).join('\n\n');
+  const JV_NOTE = /^\[(Confirmed|Cancelled|Couldn't do it): .*\]$/;
+  function jvNode(cls, html) { const d = document.createElement('div'); d.className = cls; d.innerHTML = html; return d; }
+  function jvScroll() { $('main').scrollTop = $('main').scrollHeight; }
+  function jvCard(id) {
+    const p = jv.proposals[id];
+    const card = document.createElement('div'); card.className = 'jv-proposal ' + p.state;
+    const text = document.createElement('div'); text.className = 'jv-p-text'; text.textContent = p.summary;
+    card.appendChild(text);
+    if (p.state === 'pending') {
+      const ok = document.createElement('button'); ok.type = 'button'; ok.className = 'btn small'; ok.textContent = 'Confirm';
+      const no = document.createElement('button'); no.type = 'button'; no.className = 'btn ghost small'; no.textContent = 'Cancel';
+      ok.addEventListener('click', () => jvDecide(id, true)); no.addEventListener('click', () => jvDecide(id, false));
+      card.append(ok, no);
+    } else {
+      const st = document.createElement('span'); st.className = 'jv-p-state';
+      st.textContent = { done: '✓ Done', cancelled: 'Cancelled', failed: "Couldn't do it", working: 'Saving…' }[p.state] || '';
+      card.appendChild(st);
+    }
+    return card;
+  }
+  function renderJarvis() {
+    const log = $('jvLog'); log.innerHTML = '';
+    if (!jv.messages.length) {
+      const hello = jvNode('jv-hello', 'Hi Rich. Ask me about leads, money, to-dos, bugs, app numbers and updates, Creactive or the website.');
+      const chips = document.createElement('div'); chips.className = 'jv-suggest';
+      JV_SUGGESTIONS.forEach(q => { const b = document.createElement('button'); b.type = 'button'; b.textContent = q; b.addEventListener('click', () => jvSend(q)); chips.appendChild(b); });
+      hello.appendChild(chips); log.appendChild(hello);
+    }
+    jv.messages.forEach(m => {
+      if (m.role === 'user') {
+        if (typeof m.content !== 'string' && !m.content.some(b => b.type === 'text')) return; // look-up results
+        const shown = jvText(m.content).split('\n').filter(l => !JV_NOTE.test(l.trim())).join('\n').trim();
+        if (shown) log.appendChild(jvNode('jv-msg user', jvEsc(shown)));
+      } else {
+        const t = jvText(m.content);
+        if (t.trim()) log.appendChild(jvNode('jv-msg assistant', jvFormat(t)));
+        if (Array.isArray(m.content)) m.content.forEach(b => { if (b.type === 'tool_use' && jv.proposals[b.id]) log.appendChild(jvCard(b.id)); });
+      }
+    });
+  }
+  function jvSetBusy(on) {
+    $('jvSend').hidden = on; $('jvStop').hidden = !on; $('jvInput').disabled = on;
+    document.querySelectorAll('.jv-suggest button').forEach(b => { b.disabled = on; });
+  }
+  // Makes a confirmed change with HQ's own signed-in calls.
+  async function jvDo(a) {
+    if (!db) throw new Error('not signed in');
+    if (a.kind === 'add_todo') return db.collection('todos').add({ text: a.text, group: a.when, done: false, created: Date.now() });
+    if (a.kind === 'set_todo_done') return db.doc('todos/' + a.id).update({ done: a.done });
+    if (a.kind === 'set_lead_status') return db.doc('leads/' + a.id).update({ status: a.status });
+    if (a.kind === 'add_agency_client') {
+      if (state.agency.some(c => c.email === a.email)) throw new Error('already a client');
+      return db.collection('agency').add({ name: a.name, email: a.email, note: a.note, active: true, created: Date.now() });
+    }
+    if (a.kind === 'add_tester') return db.collection('testers').add({ name: a.name, email: a.email, status: a.status, og: false, created: Date.now() });
+    throw new Error('unknown change');
+  }
+  async function jvDecide(id, yes) {
+    const p = jv.proposals[id];
+    if (!p || p.state !== 'pending') return;
+    if (!yes) { p.state = 'cancelled'; jv.notes.push('[Cancelled: ' + p.summary + ']'); jvSave(); renderJarvis(); return; }
+    p.state = 'working'; renderJarvis();
+    try { await jvDo(p.action); p.state = 'done'; jv.notes.push('[Confirmed: ' + p.summary + ']'); toast('Done: ' + p.summary); }
+    catch (e) { p.state = 'failed'; jv.notes.push("[Couldn't do it: " + p.summary + ']'); toast("Couldn't save that"); }
+    jvSave(); renderJarvis();
+  }
+  async function jvSend(text, continues = 0) {
+    if (jvBusy) return;
+    if (!continues) {
+      const content = [...jv.notes, text.trim()].filter(Boolean).join('\n');
+      if (!content) return;
+      jv.notes = [];
+      jv.messages.push({ role: 'user', content });
+      jvSave(); renderJarvis();
+    }
+    const live = jvNode('jv-msg assistant', '<span class="jv-status">Thinking…</span>');
+    $('jvLog').appendChild(live); jvScroll();
+    jvBusy = new AbortController(); jvSetBusy(true);
+    let liveText = '', status = 'Thinking…', end = null;
+    const paint = () => { live.innerHTML = jvFormat(liveText) + (status ? '<span class="jv-status">' + jvEsc(status) + '</span>' : ''); jvScroll(); };
+    const handle = (ev) => {
+      if (ev.type === 'text') { liveText += ev.text; status = ''; paint(); }
+      else if (ev.type === 'status') { status = ev.text + '…'; if (liveText && !liveText.endsWith('\n')) liveText += '\n'; paint(); }
+      else if (ev.type === 'proposal') jv.proposals[ev.id] = { action: ev.action, summary: ev.summary, state: 'pending' };
+      else if (ev.type === 'done' || ev.type === 'error') end = ev;
+    };
+    try {
+      const post = async (fresh) => fetch(jarvisApi(), { method: 'POST', headers: await authHeaders(fresh), body: JSON.stringify({ messages: jv.messages }), signal: jvBusy.signal });
+      let res = await post(false);
+      if (res.status === 401) res = await post(true);
+      if (!res.ok) { const j = await res.json().catch(() => ({})); end = { type: 'error', code: (j.error && j.error.code) || 'http_' + res.status }; }
+      else {
+        const reader = res.body.getReader(), dec = new TextDecoder();
+        let buf = '';
+        for (;;) {
+          const { value, done } = await reader.read();
+          if (done) break;
+          buf += dec.decode(value, { stream: true });
+          let i;
+          while ((i = buf.indexOf('\n')) >= 0) { const line = buf.slice(0, i).trim(); buf = buf.slice(i + 1); if (line) handle(JSON.parse(line)); }
+        }
+      }
+    } catch (e) {
+      end = e && e.name === 'AbortError' ? { type: 'stopped' } : { type: 'error', code: e && e.code === 'signed_out' ? 'signed_out' : 'network' };
+    }
+    jvBusy = null; jvSetBusy(false);
+    if (end && Array.isArray(end.messages)) jv.messages.push(...end.messages);
+    if (!end) end = { type: 'error', code: 'network' };
+    jvSave(); renderJarvis();
+    if (end.type === 'done' && end.incomplete && continues < 3) return jvSend('', continues + 1);
+    if (end.type === 'error') $('jvLog').appendChild(jvNode('jv-error', jvEsc(JV_ERRORS[end.code] || 'Something went wrong. Try again.')));
+    if (end.type === 'stopped') $('jvLog').appendChild(jvNode('jv-error', 'Stopped.'));
+    jvScroll(); $('jvInput').focus();
+  }
+  $('jvForm').addEventListener('submit', (e) => { e.preventDefault(); const t = $('jvInput').value; if (!t.trim()) return; $('jvInput').value = ''; $('jvInput').style.height = ''; jvSend(t); });
+  $('jvInput').addEventListener('keydown', (e) => { if (e.key === 'Enter' && !e.shiftKey && !e.isComposing) { e.preventDefault(); $('jvForm').requestSubmit(); } });
+  $('jvInput').addEventListener('input', () => { const t = $('jvInput'); t.style.height = ''; t.style.height = Math.min(t.scrollHeight, 180) + 'px'; });
+  $('jvStop').addEventListener('click', () => { if (jvBusy) jvBusy.abort(); });
+  $('jvNew').addEventListener('click', () => {
+    if (jvBusy) return;
+    if (jv.messages.length && !confirm('Start a new chat? This one is cleared.')) return;
+    jv = { messages: [], proposals: {}, notes: [] }; jvSave(); renderJarvis();
+  });
+  renderJarvis();
 
   // ---------- Agency clients ----------
   function renderAgency() {
@@ -1282,6 +1467,31 @@
   .services-legend span { display: inline-flex; align-items: center; gap: 6px; }
   .services-legend .dot { width: 8px; height: 8px; animation: none; }
   @media (prefers-reduced-motion: reduce) { .dot.down { animation: none; } }
+  /* Jarvis */
+  .jv-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; }
+  .jv-head .btn { flex-shrink: 0; margin-top: 4px; }
+  .jv-log { display: flex; flex-direction: column; gap: 12px; margin-bottom: 4px; }
+  .jv-msg { max-width: min(720px, 92%); padding: 10px 14px; border-radius: 16px; font-size: 14px; line-height: 1.55; overflow-wrap: anywhere; }
+  .jv-msg.user { align-self: flex-end; background: #8358FF; color: #FFFFFF; white-space: pre-wrap; border-bottom-right-radius: 6px; }
+  .jv-msg.assistant { align-self: flex-start; background: var(--panel); border: 1px solid var(--line); border-bottom-left-radius: 6px; }
+  .jv-msg p { margin: 0 0 8px; } .jv-msg p:last-child { margin-bottom: 0; }
+  .jv-msg ul { margin: 2px 0 8px; padding-left: 20px; } .jv-msg li { margin: 2px 0; }
+  .jv-msg code { font-size: 12.5px; background: rgba(255, 255, 255, 0.08); padding: 1px 5px; border-radius: 5px; }
+  .jv-status { color: var(--muted); font-size: 12.5px; font-style: italic; }
+  .jv-error { align-self: flex-start; color: #FF9AA8; font-size: 13px; }
+  .jv-proposal { align-self: flex-start; max-width: min(720px, 92%); display: flex; flex-wrap: wrap; align-items: center; gap: 10px; padding: 10px 14px; border-radius: 14px; border: 1px solid rgba(131, 88, 255, 0.55); background: rgba(131, 88, 255, 0.1); }
+  .jv-proposal .jv-p-text { flex: 1 1 220px; font-size: 13.5px; font-weight: 600; }
+  .jv-proposal .jv-p-state { font-size: 12.5px; font-weight: 700; color: var(--muted); }
+  .jv-proposal.done { border-color: rgba(87, 217, 163, 0.5); background: rgba(87, 217, 163, 0.08); } .jv-proposal.done .jv-p-state { color: #57D9A3; }
+  .jv-proposal.failed .jv-p-state { color: #FF9AA8; }
+  .jv-hello { color: var(--muted); font-size: 13.5px; }
+  .jv-suggest { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+  .jv-suggest button { background: var(--panel); color: var(--ink); border: 1px solid var(--field); border-radius: 999px; padding: 7px 12px; font: inherit; font-size: 13px; cursor: pointer; }
+  .jv-suggest button:hover { border-color: #8358FF; }
+  .jv-form { position: sticky; bottom: 0; display: flex; align-items: flex-end; gap: 8px; padding: 12px 0 4px; background: var(--canvas); }
+  .jv-form textarea { flex: 1; min-width: 0; min-height: 44px; max-height: 180px; resize: none; font: inherit; font-size: 14px; line-height: 1.45; color: var(--ink); background: #0D0A14; border: 1px solid var(--field); border-radius: 12px; padding: 11px 12px; }
+  .jv-form textarea:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; border-color: var(--accent); }
+  .jv-form .btn { height: 44px; }
 </style>
 </body>
 </html>

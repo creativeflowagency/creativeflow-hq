@@ -334,6 +334,11 @@
         <button class="btn" type="submit" id="jvSend">Send</button>
         <button class="btn ghost" type="button" id="jvStop" hidden>Stop</button>
       </form>
+      <div class="jv-voicepick" id="jvVoiceRow" hidden>
+        <label for="jvVoiceSel">Jarvis's voice</label>
+        <select id="jvVoiceSel"></select>
+        <span class="hint" id="jvVoiceTip" hidden>For the most human voice on Windows, open HQ in Microsoft Edge and pick a "Natural" voice.</span>
+      </div>
       <p class="hint">Jarvis can make mistakes, so check anything important. Messages go to Anthropic (Claude) to be answered.</p>
     </div>
     <button type="button" class="jv-wake" id="jvWake" hidden><span>Tap anywhere to wake Jarvis</span></button>
@@ -1104,13 +1109,39 @@
   const jvCanSpeak = 'speechSynthesis' in window && 'SpeechSynthesisUtterance' in window;
   let jvOn = false, jvAwake = false, jvRec = null, jvSpeakBuf = '', jvSpeaking = 0, jvReplyDone = true, jvGreeted = false, jvReplyText = '', jvQuick = 0, jvTyping = false;
   const jvSpeaks = () => jvOn && jvAwake && jvCanSpeak;
-  // A British voice if the device has one (like the films), otherwise any English voice.
+  // The most human-sounding English voice on this device, British and male first (like the films):
+  // Edge's "Natural" neural voices, then Apple's Premium/Enhanced voices, then Google's, then the rest.
+  // A voice picked in the text panel (keyboard icon) wins.
+  const JV_MALE = /\b(Ryan|Thomas|Oliver|Daniel|Arthur|Jamie|Alfie|Elliot|Noah|Ethan|Guy|Andrew|Brian|Christopher|Eric|Roger|Steffan|Davis|Tony|Jason|William|Liam|George|Rishi|Male)\b/i;
+  function jvVoiceScore(v) {
+    if (!/^en/i.test(v.lang)) return -1;
+    let n = 0;
+    if (/natural|neural/i.test(v.name)) n += 100;
+    else if (/premium/i.test(v.name)) n += 90;
+    else if (/enhanced/i.test(v.name)) n += 70;
+    else if (/^google/i.test(v.name)) n += 40;
+    if (/^en[-_]GB/i.test(v.lang)) n += 20;
+    if (JV_MALE.test(v.name)) n += 15;
+    if (/compact|eloquence|espeak/i.test(v.name)) n -= 60;
+    return n;
+  }
+  function jvVoiceList() { return speechSynthesis.getVoices().filter(v => jvVoiceScore(v) >= 0).sort((a, b) => jvVoiceScore(b) - jvVoiceScore(a) || a.name.localeCompare(b.name)); }
   function jvVoicePick() {
-    const voices = speechSynthesis.getVoices();
-    for (const name of ['Daniel', 'Google UK English Male', 'Arthur', 'Oliver', 'Microsoft Ryan', 'Microsoft George', 'Rishi']) {
-      const v = voices.find(x => x.name.includes(name)); if (v) return v;
-    }
-    return voices.find(x => /^en[-_]GB/i.test(x.lang)) || voices.find(x => /^en/i.test(x.lang)) || null;
+    const list = jvVoiceList();
+    let chosen = '';
+    try { chosen = localStorage.getItem('hq.jvVoiceName') || ''; } catch (e) {}
+    return (chosen && list.find(v => v.name === chosen)) || list[0] || null;
+  }
+  function jvVoiceMenu() {
+    const list = jvVoiceList(), sel = $('jvVoiceSel');
+    if (!list.length) return;
+    let chosen = '';
+    try { chosen = localStorage.getItem('hq.jvVoiceName') || ''; } catch (e) {}
+    sel.innerHTML = '';
+    const auto = document.createElement('option'); auto.value = ''; auto.textContent = 'Best available (' + list[0].name + ')'; sel.appendChild(auto);
+    list.forEach(v => { const o = document.createElement('option'); o.value = v.name; o.textContent = v.name + (/natural|neural|premium|enhanced/i.test(v.name) ? '  ★' : ''); if (v.name === chosen) o.selected = true; sel.appendChild(o); });
+    $('jvVoiceRow').hidden = false;
+    $('jvVoiceTip').hidden = /natural|neural|premium|enhanced/i.test((jvVoicePick() || {}).name || '');
   }
   const jvPlain = (t) => String(t).replace(/```[\s\S]*?```/g, ' ').replace(/`([^`]*)`/g, '$1').replace(/\*\*(.+?)\*\*/g, '$1')
     .replace(/^#{1,4}\s+/gm, '').replace(/^\s*(?:[-*•]|\d+[.)])\s+/gm, '').replace(/https?:\/\/\S+/g, 'the link').replace(/\s+/g, ' ').trim();
@@ -1124,7 +1155,7 @@
     if (!t || !jvSpeaks()) return;
     const u = new SpeechSynthesisUtterance(t);
     const v = jvVoicePick(); if (v) { u.voice = v; u.lang = v.lang; }
-    u.rate = 1.03; u.pitch = 0.95;
+    u.rate = 1; u.pitch = 1;
     jvSpeaking++; jvCoreState();
     u.onend = u.onerror = (e) => {
       jvSpeaking = Math.max(0, jvSpeaking - 1);
@@ -1143,8 +1174,8 @@
     jvReplyText += piece; $('jvReply').textContent = jvPlain(jvReplyText);
     if (!jvSpeaks()) return;
     jvSpeakBuf += piece;
-    const cut = Math.max(jvSpeakBuf.lastIndexOf('\n'), ...['. ', '! ', '? ', ': '].map(m => jvSpeakBuf.lastIndexOf(m) + 1));
-    if (cut > 0) { jvSay(jvSpeakBuf.slice(0, cut)); jvSpeakBuf = jvSpeakBuf.slice(cut); }
+    const cut = Math.max(jvSpeakBuf.lastIndexOf('\n'), ...['. ', '! ', '? '].map(m => jvSpeakBuf.lastIndexOf(m) + 1));
+    if (cut > 0 && (cut >= 140 || !jvSpeaking)) { jvSay(jvSpeakBuf.slice(0, cut)); jvSpeakBuf = jvSpeakBuf.slice(cut); }
   }
   function jvVoiceEnd(end) {
     jvReplyDone = true;
@@ -1258,7 +1289,16 @@
   $('jvInput').addEventListener('focus', () => { jvTyping = true; jvStopListening(); });
   $('jvInput').addEventListener('blur', () => { jvTyping = false; jvAfterSpeech(); });
   try { if (localStorage.getItem('hq.jvText') === '1') jvSetText(true); } catch (e) {}
-  if (jvCanSpeak) speechSynthesis.getVoices(); // starts loading the device's voices
+  if (jvCanSpeak) {
+    speechSynthesis.getVoices(); // starts loading the device's voices
+    jvVoiceMenu();
+    if (speechSynthesis.addEventListener) speechSynthesis.addEventListener('voiceschanged', jvVoiceMenu);
+    $('jvVoiceSel').addEventListener('change', () => {
+      try { localStorage.setItem('hq.jvVoiceName', $('jvVoiceSel').value); } catch (e) {}
+      $('jvVoiceTip').hidden = /natural|neural|premium|enhanced/i.test((jvVoicePick() || {}).name || '');
+      if (jvSpeaks() && !jvBusy) { jvHush(); jvSay('Hello sir. This is how I sound now.'); }
+    });
+  }
   jvRenderCards(); jvCoreState(); jvCheckPage();
 
   // ---------- Agency clients ----------
@@ -1755,6 +1795,9 @@
   .jv-wake { position: absolute; inset: 0; z-index: 3; display: flex; align-items: flex-end; justify-content: center; padding: 0 16px 14%; border: 0; cursor: pointer; background: rgba(2, 8, 16, 0.45); color: #E9FBFF; font: inherit; font-size: 14px; font-weight: 700; letter-spacing: .26em; text-transform: uppercase; }
   .jv-wake span { padding: 10px 18px; border-radius: 999px; border: 1px solid rgba(57, 213, 255, 0.55); background: rgba(4, 18, 31, 0.8); text-shadow: 0 0 10px rgba(57, 213, 255, 0.7); }
   @media (prefers-reduced-motion: reduce) { .jv-spin, .jv-orbit, .jv-core .jv-sphere, .jv-core[data-state] .jv-ripple, .jv-core[data-state="speaking"] .jv-sphere { animation: none; } }
+  .jv-voicepick { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-top: 10px; font-size: 13px; color: #8FB3C9; }
+  .jv-voicepick select { max-width: 100%; }
+  .jv-voicepick .hint { flex-basis: 100%; margin: 0; }
 </style>
 </body>
 </html>

@@ -326,6 +326,7 @@
       <div class="jv-you" id="jvYou"></div>
       <div class="jv-reply" id="jvReply" aria-live="polite"></div>
       <div class="jv-cards" id="jvCards"></div>
+      <div class="jv-builds" id="jvBuilds" aria-live="polite"></div>
     </div>
     <div class="jv-text" id="jvText" hidden>
       <div class="jv-log" id="jvLog"></div>
@@ -1028,6 +1029,12 @@
       return db.collection('agency').add({ name: a.name, email: a.email, note: a.note, active: true, created: Date.now() });
     }
     if (a.kind === 'add_tester') return db.collection('testers').add({ name: a.name, email: a.email, status: a.status, og: false, created: Date.now() });
+    if (a.kind === 'start_code_task' || a.kind === 'ship_task' || a.kind === 'discard_task') {
+      const body = a.kind === 'start_code_task' ? { action: 'start', project: a.project, request: a.request } : { action: a.kind === 'ship_task' ? 'ship' : 'discard', id: a.id };
+      const r = await jvBuildsCall('POST', body);
+      jvBuildsLoad(); // show it in the builds list straight away
+      return r;
+    }
     throw new Error('unknown change');
   }
   async function jvDecide(id, yes) {
@@ -1280,7 +1287,67 @@
     if (waiting.length === 1 && (window.SpeechRecognition || window.webkitSpeechRecognition)) box.appendChild(jvNode('jv-hint', 'Say "confirm" or "cancel"'));
   }
   // Runs only while the Jarvis page is showing, you're signed in and the tab is in front.
-  function jvCheckPage() { if (db && !$('jarvis').hidden && !document.hidden) jvStart(); else jvPause(); }
+  // ---------- Jarvis builds: coding jobs on the apps (/api/code-tasks) ----------
+  // Listed under the core while Jarvis is open, checked every 30 seconds; Jarvis says when one is
+  // ready to review. Ship / Discard here are direct (the click is the confirmation).
+  let jvBuildsTimer = null, jvBuildsSeen = null;
+  const JV_BUILD_LABEL = { working: 'Building', ready: 'Ready', shipped: 'Shipped', no_changes: 'No changes', failed: 'Failed', discarded: 'Discarded' };
+  async function jvBuildsCall(method, body) {
+    const res = await fetch(HQ_API.replace('/api/hq', '/api/code-tasks'), { method, headers: await authHeaders(), body: body ? JSON.stringify(body) : undefined });
+    const j = await res.json().catch(() => ({}));
+    if (!res.ok) throw Object.assign(new Error('builds'), { code: (j.error && j.error.code) || 'http_' + res.status });
+    return j;
+  }
+  function jvBuildsRender(tasks) {
+    const box = $('jvBuilds'); box.innerHTML = '';
+    tasks.filter(t => t.status !== 'discarded' && (t.status !== 'shipped' || Date.now() - t.updated < 86400000)).slice(0, 5).forEach(t => {
+      const row = document.createElement('div'); row.className = 'jv-build';
+      const pill = document.createElement('span'); pill.className = 'jv-b-pill ' + t.status; pill.textContent = JV_BUILD_LABEL[t.status] || t.status;
+      const text = document.createElement('div'); text.className = 'jv-b-text'; text.textContent = t.title || t.request;
+      const meta = document.createElement('span'); meta.className = 'jv-b-meta';
+      meta.textContent = [t.project, t.changedFiles ? t.changedFiles + (t.changedFiles === 1 ? ' file' : ' files') : '', t.cost || '', t.error || ''].filter(Boolean).join(' · ');
+      text.appendChild(meta);
+      row.append(pill, text);
+      if (t.prUrl) { const a = document.createElement('a'); a.href = t.prUrl; a.target = '_blank'; a.rel = 'noopener'; a.textContent = 'Review'; row.appendChild(a); }
+      if (t.status === 'ready') {
+        const ship = document.createElement('button'); ship.type = 'button'; ship.className = 'btn small'; ship.textContent = 'Ship it';
+        ship.addEventListener('click', async () => { ship.disabled = true; try { await jvBuildsCall('POST', { action: 'ship', id: t.id }); toast('Shipped: ' + (t.title || t.request)); } catch (e) { toast(e.code === 'cannot_merge' ? "GitHub won't merge it yet. Open Review to see why." : "Couldn't ship that"); } jvBuildsLoad(); });
+        row.appendChild(ship);
+      }
+      if (t.status === 'working' || t.status === 'ready') {
+        const drop = document.createElement('button'); drop.type = 'button'; drop.className = 'btn ghost small'; drop.textContent = 'Discard';
+        drop.addEventListener('click', async () => { if (!confirm('Throw away this build?')) return; try { await jvBuildsCall('POST', { action: 'discard', id: t.id }); } catch (e) { toast("Couldn't discard that"); } jvBuildsLoad(); });
+        row.appendChild(drop);
+      }
+      box.appendChild(row);
+    });
+  }
+  async function jvBuildsLoad() {
+    let r;
+    try { r = await jvBuildsCall('GET'); } catch (e) { return; }
+    const tasks = r.tasks || [];
+    jvBuildsRender(tasks);
+    // Say so when a build finishes (only for changes seen while Jarvis is open).
+    if (jvBuildsSeen) {
+      const done = tasks.filter(t => jvBuildsSeen[t.id] === 'working' && t.status !== 'working');
+      done.forEach(t => {
+        const name = t.title || t.request;
+        const line = t.status === 'ready' ? `Sir, the build is ready: ${name}. Have a look, then say "ship it" when you're happy.`
+          : t.status === 'no_changes' ? `Sir, the build finished without changing anything: ${name}.`
+          : t.status === 'failed' ? `Sir, a build ran into trouble: ${name}. ${t.error || ''}` : '';
+        if (!line) return;
+        toast(line.replace(/^Sir, /, ''));
+        if (!jvBusy && jvSpeaks()) { $('jvReply').textContent = line; jvSay(line); }
+      });
+    }
+    jvBuildsSeen = Object.fromEntries(tasks.map(t => [t.id, t.status]));
+  }
+  function jvBuildsWatch(on) {
+    clearInterval(jvBuildsTimer); jvBuildsTimer = null;
+    if (on) { jvBuildsLoad(); jvBuildsTimer = setInterval(jvBuildsLoad, 30000); }
+  }
+
+  function jvCheckPage() { const on = !!db && !$('jarvis').hidden && !document.hidden; if (on) jvStart(); else jvPause(); jvBuildsWatch(on); }
   document.addEventListener('hq:page', jvCheckPage);
   document.addEventListener('hq:ready', jvCheckPage);
   document.addEventListener('visibilitychange', jvCheckPage);
@@ -1798,6 +1865,14 @@
   .jv-voicepick { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-top: 10px; font-size: 13px; color: #8FB3C9; }
   .jv-voicepick select { max-width: 100%; }
   .jv-voicepick .hint { flex-basis: 100%; margin: 0; }
+  .jv-builds { display: flex; flex-direction: column; gap: 8px; width: 100%; max-width: 620px; margin-top: 16px; }
+  .jv-build { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 10px; padding: 9px 12px; border-radius: 14px; background: rgba(4, 18, 31, 0.75); border: 1px solid rgba(57, 213, 255, 0.25); text-align: left; font-size: 13.5px; }
+  .jv-build .jv-b-text { flex: 1 1 220px; min-width: 0; color: #E9FBFF; overflow-wrap: anywhere; }
+  .jv-build .jv-b-meta { display: block; color: #8FB3C9; font-size: 12px; margin-top: 2px; }
+  .jv-build a { color: #7FE7FF; font-weight: 700; font-size: 12.5px; }
+  .jv-b-pill { font-size: 11px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; padding: 2px 8px; border-radius: 8px; background: rgba(57, 213, 255, 0.14); color: #7FE7FF; white-space: nowrap; }
+  .jv-b-pill.ready { background: rgba(87, 217, 163, 0.16); color: #57D9A3; } .jv-b-pill.failed, .jv-b-pill.no_changes { background: rgba(255, 107, 125, 0.16); color: #FF9AA8; }
+  .jv-b-pill.working { animation: jvBlink 1.6s ease-in-out infinite; } @keyframes jvBlink { 50% { opacity: .45; } }
 </style>
 </body>
 </html>

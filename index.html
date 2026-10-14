@@ -278,6 +278,7 @@
       <button type="button" class="jv-icon" id="jvTextToggle" aria-pressed="false" aria-label="Show the conversation and type" title="Type / show conversation"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2.5" y="5" width="15" height="10" rx="2"/><path d="M6 8.5h.01M9 8.5h.01M12 8.5h.01M15 8.5h.01M6.5 12h7"/></svg></button>
       <button type="button" class="jv-icon" id="jvNew" aria-label="New conversation" title="New conversation"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3.5 10a6.5 6.5 0 1 0 2-4.7"/><path d="M3.5 3.5v3h3"/></svg></button>
     </div>
+    <div class="jv-hudbar" aria-hidden="true"><span>J.A.R.V.I.S.</span><span>System status <b id="jvSys">Online</b></span><span id="jvClock"></span></div>
     <div class="jv-stage">
       <div class="jv-core" id="jvCore" data-state="idle" aria-hidden="true">
         <svg viewBox="0 0 400 400" focusable="false">
@@ -331,7 +332,7 @@
     <div class="jv-text" id="jvText" hidden>
       <div class="jv-log" id="jvLog"></div>
       <form class="jv-form" id="jvForm">
-        <textarea id="jvInput" rows="1" maxlength="8000" placeholder="Type to Jarvis…" aria-label="Message Jarvis"></textarea>
+        <textarea id="jvInput" rows="1" maxlength="8000" placeholder="Talk to Jarvis…" aria-label="Message Jarvis"></textarea>
         <button class="btn" type="submit" id="jvSend">Send</button>
         <button class="btn ghost" type="button" id="jvStop" hidden>Stop</button>
       </form>
@@ -1155,6 +1156,7 @@
   function jvCoreState() {
     const st = !jvOn ? 'idle' : !jvAwake ? 'asleep' : jvSpeaking ? 'speaking' : jvBusy ? 'thinking' : jvRec ? 'listening' : 'idle';
     $('jvCore').dataset.state = st;
+    if ($('jvSys')) $('jvSys').textContent = st === 'asleep' ? 'Standby' : 'Online';
     $('jvState').textContent = { asleep: 'Standing by', speaking: 'Speaking', thinking: 'Thinking', listening: 'Listening', idle: jvTextMode ? 'Text mode' : 'Online' }[st];
   }
   function jvSay(text) {
@@ -1355,6 +1357,8 @@
     if (on) { jvBuildsLoad(); jvBuildsTimer = setInterval(jvBuildsLoad, 30000); }
   }
 
+  function jvClock() { const c = $('jvClock'); if (c) c.textContent = new Date().toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' }); }
+  jvClock(); setInterval(jvClock, 15000);
   function jvCheckPage() { const on = !!db && !$('jarvis').hidden && !document.hidden; if (on) jvStart(); else jvPause(); jvBuildsWatch(on); }
   document.addEventListener('hq:page', jvCheckPage);
   document.addEventListener('hq:ready', jvCheckPage);
@@ -1831,7 +1835,7 @@
   .jv-form .btn { height: 44px; }
   /* Jarvis: voice-first HUD */
   .jv-sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
-  .jv-hud { position: relative; display: flex; flex-direction: column; align-items: center; min-height: calc(100dvh - 120px); padding: 20px 16px 24px; border-radius: 24px; overflow: hidden;
+  .jv-hud { position: relative; display: flex; flex-direction: column; align-items: center; min-height: calc(100dvh - 120px); padding: 20px 16px 24px; border-radius: 24px; overflow: clip;
     background: radial-gradient(55% 45% at 50% 34%, rgba(57, 213, 255, 0.14), transparent 70%), linear-gradient(rgba(57, 213, 255, 0.05) 1px, transparent 1px) 0 0 / 100% 32px, linear-gradient(90deg, rgba(57, 213, 255, 0.05) 1px, transparent 1px) 0 0 / 32px 100%, #040D18;
     border: 1px solid rgba(57, 213, 255, 0.22); box-shadow: inset 0 0 80px rgba(57, 213, 255, 0.06); color: #E9FBFF; }
   .jv-stage { flex: 1; width: 100%; max-width: 680px; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; }
@@ -1884,6 +1888,37 @@
   .jv-hud.text .jv-core { width: min(190px, 42vw); }
   .jv-hud.text .jv-you, .jv-hud.text .jv-reply { display: none; }
   .jv-hud.text .jv-stage { flex: 0 0 auto; }
+  /* Jarvis HUD details: status bar, and text mode styled like the films */
+  .jv-hudbar { align-self: stretch; display: flex; justify-content: space-between; gap: 12px; padding: 0 96px 10px 2px; font-size: 10.5px; font-weight: 800; letter-spacing: .26em; text-transform: uppercase; color: #5F8AA3; border-bottom: 1px solid rgba(57, 213, 255, 0.14); }
+  .jv-hudbar b { color: #57D9A3; text-shadow: 0 0 8px rgba(87, 217, 163, 0.6); }
+  .jv-hudbar #jvClock { color: #7FE7FF; font-variant-numeric: tabular-nums; }
+  @media (max-width: 520px) { .jv-hudbar span:first-child { display: none; } .jv-hudbar { padding-right: 92px; } }
+  .jv-hud.text .jv-core { width: min(150px, 30vw); }
+  .jv-hud.text .jv-state { margin-top: 0; }
+  .jv-hud.text .jv-cards { display: none; } /* in text mode the cards sit in the chat */
+  .jv-hud.text .jv-stage { position: sticky; top: 0; z-index: 1; max-width: none; width: calc(100% + 32px); margin: 0 -16px; padding: 6px 16px 14px; background: linear-gradient(#040D18 86%, rgba(4, 13, 24, 0)); }
+  .jv-hud .jv-text .jv-log { gap: 14px; }
+  .jv-hud .jv-msg { max-width: min(640px, 94%); border-radius: 4px; font-size: 14.5px; line-height: 1.55; padding: 10px 14px 12px; }
+  .jv-hud .jv-msg::before { display: block; margin-bottom: 6px; font-size: 10px; font-weight: 800; letter-spacing: .3em; text-transform: uppercase; }
+  .jv-hud .jv-msg.assistant { color: #E9FBFF; background: linear-gradient(180deg, rgba(10, 42, 66, 0.82), rgba(4, 18, 31, 0.88)); border: 1px solid rgba(57, 213, 255, 0.4); border-left: 2px solid #39D5FF; box-shadow: 0 0 18px rgba(57, 213, 255, 0.12), inset 0 0 22px rgba(57, 213, 255, 0.05); }
+  .jv-hud .jv-msg.assistant::before { content: 'Jarvis'; color: #7FE7FF; text-shadow: 0 0 8px rgba(57, 213, 255, 0.7); }
+  .jv-hud .jv-msg.user { color: #D9F6FF; background: rgba(57, 213, 255, 0.06); border: 1px solid rgba(57, 213, 255, 0.22); border-right: 2px solid rgba(127, 231, 255, 0.7); text-align: right; }
+  .jv-hud .jv-msg.user::before { content: 'You'; color: #5F8AA3; }
+  .jv-hud .jv-msg code { background: rgba(57, 213, 255, 0.12); color: #BFF6FF; }
+  .jv-hud .jv-status { color: #7FE7FF; font-style: normal; letter-spacing: .14em; text-transform: uppercase; font-size: 11.5px; }
+  .jv-hud .jv-hello { color: #8FB3C9; }
+  .jv-hud .jv-suggest button { border-radius: 6px; background: rgba(4, 18, 31, 0.75); border-color: rgba(57, 213, 255, 0.35); color: #BFF6FF; }
+  .jv-hud .jv-suggest button:hover { border-color: #39D5FF; box-shadow: 0 0 12px rgba(57, 213, 255, 0.3); }
+  .jv-hud .jv-proposal .jv-p-text { flex: 1 1 100%; }
+  .jv-hud .jv-proposal { border-radius: 6px; background: rgba(57, 213, 255, 0.08); border-color: rgba(57, 213, 255, 0.55); }
+  .jv-hud .btn { background: linear-gradient(135deg, #39D5FF, #1B7FB8); color: #02121F; box-shadow: 0 0 16px rgba(57, 213, 255, 0.4); }
+  .jv-hud .btn.ghost { background: transparent; color: #BFF6FF; box-shadow: inset 0 0 0 1px rgba(57, 213, 255, 0.45); }
+  .jv-hud .jv-form textarea { border-radius: 8px; background: rgba(2, 10, 20, 0.92); border-color: rgba(57, 213, 255, 0.45); color: #E9FBFF; box-shadow: inset 0 0 14px rgba(57, 213, 255, 0.08); }
+  .jv-hud .jv-form textarea::placeholder { color: #5F8AA3; }
+  .jv-hud .jv-form textarea:focus-visible { outline: none; border-color: #39D5FF; box-shadow: 0 0 0 1px #39D5FF, 0 0 18px rgba(57, 213, 255, 0.35); }
+  .jv-hud .jv-voicepick select { background: rgba(2, 10, 20, 0.92); border-color: rgba(57, 213, 255, 0.35); color: #BFF6FF; }
+  .jv-hud.text .jv-voicepick { display: none; }
+  .jv-hud .hint { color: #5F8AA3; }
 </style>
 </body>
 </html>

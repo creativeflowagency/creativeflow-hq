@@ -1114,8 +1114,8 @@
   // With exactly one change waiting, saying "confirm" or "cancel" presses that button.
   const JvRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
   const jvCanSpeak = 'speechSynthesis' in window && 'SpeechSynthesisUtterance' in window;
-  let jvOn = false, jvAwake = false, jvRec = null, jvSpeakBuf = '', jvSpeaking = 0, jvReplyDone = true, jvGreeted = false, jvReplyText = '', jvQuick = 0, jvTyping = false;
-  const jvSpeaks = () => jvOn && jvAwake && jvCanSpeak;
+  let jvOn = false, jvAwake = false, jvRec = null, jvSpeakBuf = '', jvSpeaking = 0, jvReplyDone = true, jvGreeted = false, jvReplyText = '', jvQuick = 0, jvTyping = false, jvTextMode = false;
+  const jvSpeaks = () => jvOn && jvAwake && jvCanSpeak && !jvTextMode; // text mode is silent
   // The most human-sounding English voice on this device, British and male first (like the films):
   // Edge's "Natural" neural voices, then Apple's Premium/Enhanced voices, then Google's, then the rest.
   // A voice picked in the text panel (keyboard icon) wins.
@@ -1155,7 +1155,7 @@
   function jvCoreState() {
     const st = !jvOn ? 'idle' : !jvAwake ? 'asleep' : jvSpeaking ? 'speaking' : jvBusy ? 'thinking' : jvRec ? 'listening' : 'idle';
     $('jvCore').dataset.state = st;
-    $('jvState').textContent = { asleep: 'Standing by', speaking: 'Speaking', thinking: 'Thinking', listening: 'Listening', idle: JvRecognition ? 'Online' : 'Online · type to talk' }[st];
+    $('jvState').textContent = { asleep: 'Standing by', speaking: 'Speaking', thinking: 'Thinking', listening: 'Listening', idle: jvTextMode ? 'Text mode' : 'Online' }[st];
   }
   function jvSay(text) {
     const t = jvPlain(text);
@@ -1216,7 +1216,7 @@
     return true;
   }
   function jvListen() {
-    if (!JvRecognition || !jvOn || !jvAwake || jvBusy || jvSpeaking || jvRec || jvTyping) return;
+    if (!JvRecognition || !jvOn || !jvAwake || jvBusy || jvSpeaking || jvRec || jvTyping || jvTextMode) return;
     const rec = new JvRecognition();
     rec.lang = navigator.language || 'en-US';
     rec.interimResults = true;
@@ -1248,7 +1248,7 @@
     const h = new Date().getHours();
     const line = (h < 5 ? 'Working late, sir.' : h < 12 ? 'Good morning, sir.' : h < 18 ? 'Good afternoon, sir.' : 'Good evening, sir.') + ' Jarvis online. How can I help?';
     if (!jv.messages.length || !$('jvReply').textContent) $('jvReply').textContent = line;
-    if (jvCanSpeak) jvSay(line); else jvAfterSpeech();
+    if (jvSpeaks()) jvSay(line); else jvAfterSpeech();
   }
   // Needs a tap ('tap'), or the microphone is blocked in the browser settings ('mic').
   function jvSleep(why) {
@@ -1265,8 +1265,8 @@
   function jvStart() {
     if (jvOn) return;
     jvOn = true;
-    if (!JvRecognition && !jvCanSpeak) { jvSetText(true); jvAwake = true; jvCoreState(); return; }
-    if (!JvRecognition) jvSetText(true); // can speak but not listen (e.g. Firefox): type instead
+    if (!JvRecognition && !jvTextMode) jvSetText(true); // this browser can't listen (e.g. Firefox): type instead
+    if (jvTextMode) { jvAwake = true; jvGreet(); return; } // no sound or microphone, so no tap needed
     if (navigator.userActivation && !navigator.userActivation.hasBeenActive) { jvSleep('tap'); return; }
     jvWakeUp();
   }
@@ -1274,11 +1274,19 @@
     if (!jvOn) return;
     jvOn = false; jvStopListening(); jvHush(); $('jvWake').hidden = true; jvCoreState();
   }
+  // Text mode: a quiet chat (no microphone, no speaking), for phones in public. Remembered per browser.
   function jvSetText(on) {
+    jvTextMode = on;
     $('jvText').hidden = !on;
-    $('jvTextToggle').setAttribute('aria-pressed', String(on));
+    $('jarvis').classList.toggle('text', on);
+    const t = $('jvTextToggle');
+    t.setAttribute('aria-pressed', String(on));
+    t.setAttribute('aria-label', on ? 'Switch to voice' : 'Switch to text mode');
+    t.title = on ? 'Switch to voice' : 'Switch to text mode';
     try { localStorage.setItem('hq.jvText', on ? '1' : '0'); } catch (e) {}
-    if (on) jvScroll();
+    if (on) { jvStopListening(); jvHush(); $('jvWake').hidden = true; if (jvOn) jvAwake = true; jvScroll(); }
+    else if (jvOn && JvRecognition) jvWakeUp(); // the tap on the button counts, so voice can start straight away
+    jvCoreState();
   }
   function jvRenderCards() {
     const box = $('jvCards'); box.innerHTML = '';
@@ -1873,6 +1881,9 @@
   .jv-b-pill { font-size: 11px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; padding: 2px 8px; border-radius: 8px; background: rgba(57, 213, 255, 0.14); color: #7FE7FF; white-space: nowrap; }
   .jv-b-pill.ready { background: rgba(87, 217, 163, 0.16); color: #57D9A3; } .jv-b-pill.failed, .jv-b-pill.no_changes { background: rgba(255, 107, 125, 0.16); color: #FF9AA8; }
   .jv-b-pill.working { animation: jvBlink 1.6s ease-in-out infinite; } @keyframes jvBlink { 50% { opacity: .45; } }
+  .jv-hud.text .jv-core { width: min(190px, 42vw); }
+  .jv-hud.text .jv-you, .jv-hud.text .jv-reply { display: none; }
+  .jv-hud.text .jv-stage { flex: 0 0 auto; }
 </style>
 </body>
 </html>

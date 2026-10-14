@@ -231,6 +231,7 @@
       <a href="#testers"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="7.5" cy="7" r="2.6"/><path d="M2.8 16c.4-2.6 2.3-4.2 4.7-4.2s4.3 1.6 4.7 4.2"/><circle cx="14" cy="7.8" r="2"/><path d="M13.2 11.9c2.1-.2 3.7 1.1 4 3.4"/></svg><span>Beta testers</span></a>
       <a href="#bugs"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 6V4.8a3 3 0 0 1 6 0V6"/><rect x="5" y="6" width="10" height="11" rx="5"/><path d="M10 9.5v4.5M2.5 11h2.5M15 11h2.5M3.5 6.5l2 1.5M16.5 6.5l-2 1.5M3.5 16.5l2-1.5M16.5 16.5l-2-1.5"/></svg><span>Bugs</span><span class="nav-count" id="bugsNavCount" hidden></span></a>
       <a href="#leads"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2.5" y="4.5" width="15" height="11" rx="2"/><path d="m3 5.5 7 5.5 7-5.5"/></svg><span>Leads</span><span class="nav-count" id="leadsNavCount" hidden></span></a>
+      <a href="#prospects"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="10" cy="10" r="7"/><circle cx="10" cy="10" r="3.5"/><circle cx="10" cy="10" r=".6" fill="currentColor"/></svg><span>Prospects</span><span class="nav-count" id="prospectsNavCount" hidden></span></a>
       <a href="#agency"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 2.8 12.2 7.3l5 .7-3.6 3.5.8 5L10 14.2l-4.4 2.3.8-5L2.8 8l5-.7z"/></svg><span>Agency clients</span></a>
       <a href="#plan"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 5.5 7.5 3.5l5 2 4.5-2v11l-4.5 2-5-2L3 16.5z"/><path d="M7.5 3.5v11M12.5 5.5v11"/></svg><span>Plan</span></a>
     </nav>
@@ -446,6 +447,13 @@
     <div class="group" id="leadList"><div class="empty">Loading…</div></div>
   </section>
 
+  <section id="prospects" aria-labelledby="prospectsHead">
+    <h2 id="prospectsHead">Prospects</h2>
+    <p class="section-sub">Potential editing clients. Ask Jarvis to find YouTubers ("find 10 gaming channels with 5K to 50K subscribers") and write them a message. Emails go from your Gmail after you confirm each one; for Instagram and X, HQ copies the message and opens their profile so you send it yourself.</p>
+    <div class="gmail-box" id="gmailBox"><span id="gmailText">Checking Gmail…</span><button type="button" class="btn small" id="gmailBtn" hidden>Connect Gmail</button></div>
+    <div class="group" id="prospectList"><div class="empty">Loading…</div></div>
+  </section>
+
   <section id="agency" aria-labelledby="agencyHead">
     <h2 id="agencyHead">Agency clients</h2>
     <p class="section-sub">Active agency clients get <strong>Creator Max</strong> (all AI and Max features). When a client leaves, press <strong>End</strong>: they keep <strong>Basic for life</strong>, and the AI and Max features stop. Add their name and the email they'll sign up with: when they sign in to CreativeFlow with that email (email, Google or Apple), it unlocks automatically. No Gumroad needed.</p>
@@ -538,7 +546,7 @@
   const TESTER_STATUS = { invited: 'Invited', testing: 'Testing', feedback: 'Gave feedback', done: 'Done' };
 
   let db = null, canWrite = true;
-  const state = { todos: [], months: [], costs: [], testers: [], agency: [], leads: [], loaded: { todos: false, months: false, costs: false, testers: false, agency: false, leads: false } };
+  const state = { todos: [], months: [], costs: [], testers: [], agency: [], leads: [], prospects: [], loaded: { todos: false, months: false, costs: false, testers: false, agency: false, leads: false, prospects: false } };
   let editingCostId = null;
 
   function toast(msg) {
@@ -882,7 +890,7 @@
   });
 
   // ---------- Pages: one section at a time, chosen from the menu (#todos etc. in the link opens that page) ----------
-  const PAGES = ['overview', 'jarvis', 'todos', 'money', 'costs', 'testers', 'bugs', 'leads', 'agency', 'plan'];
+  const PAGES = ['overview', 'jarvis', 'todos', 'money', 'costs', 'testers', 'bugs', 'leads', 'prospects', 'agency', 'plan'];
   function showPage(name, focus) {
     if (!PAGES.includes(name)) name = 'overview';
     PAGES.forEach(p => { $(p).hidden = p !== name; });
@@ -981,6 +989,7 @@
     const card = document.createElement('div'); card.className = 'jv-proposal ' + p.state;
     const text = document.createElement('div'); text.className = 'jv-p-text'; text.textContent = p.summary;
     card.appendChild(text);
+    if (p.detail) { const d = document.createElement('div'); d.className = 'jv-p-detail'; d.textContent = p.detail; card.appendChild(d); } // the message, to read before sending
     if (p.state === 'pending') {
       const ok = document.createElement('button'); ok.type = 'button'; ok.className = 'btn small'; ok.textContent = 'Confirm';
       const no = document.createElement('button'); no.type = 'button'; no.className = 'btn ghost small'; no.textContent = 'Cancel';
@@ -1030,6 +1039,11 @@
       return db.collection('agency').add({ name: a.name, email: a.email, note: a.note, active: true, created: Date.now() });
     }
     if (a.kind === 'add_tester') return db.collection('testers').add({ name: a.name, email: a.email, status: a.status, og: false, created: Date.now() });
+    if (a.kind === 'add_prospects') return sendOps(a.items.map(item => ({ op: 'set', collection: 'prospects', id: newId(), data: { ...item, status: 'new', created: Date.now() } })));
+    if (a.kind === 'save_drafts') return sendOps(a.drafts.map(d => ({ op: 'update', collection: 'prospects', id: d.id, data: { draft: { channel: d.channel, subject: d.subject, message: d.message, at: Date.now() } } })));
+    if (a.kind === 'set_prospect_status') return db.doc('prospects/' + a.id).update(a.note ? { status: a.status, note: a.note } : { status: a.status });
+    if (a.kind === 'send_email') return outreachEmail(a.id, a.subject, a.body);
+    if (a.kind === 'open_dm') return outreachDm(a.id, a.platform, a.url, a.message);
     if (a.kind === 'start_code_task' || a.kind === 'ship_task' || a.kind === 'discard_task') {
       const body = a.kind === 'start_code_task' ? { action: 'start', project: a.project, request: a.request } : { action: a.kind === 'ship_task' ? 'ship' : 'discard', id: a.id };
       const r = await jvBuildsCall('POST', body);
@@ -1065,7 +1079,7 @@
     const handle = (ev) => {
       if (ev.type === 'text') { liveText += ev.text; status = ''; paint(); jvVoiceFeed(ev.text); }
       else if (ev.type === 'status') { status = ev.text + '…'; if (liveText && !liveText.endsWith('\n')) liveText += '\n'; paint(); }
-      else if (ev.type === 'proposal') jv.proposals[ev.id] = { action: ev.action, summary: ev.summary, state: 'pending' };
+      else if (ev.type === 'proposal') jv.proposals[ev.id] = { action: ev.action, summary: ev.summary, detail: ev.detail || '', state: 'pending' };
       else if (ev.type === 'done' || ev.type === 'error') end = ev;
     };
     try {
@@ -1380,6 +1394,99 @@
   }
   jvRenderCards(); jvCoreState(); jvCheckPage();
 
+  // ---------- Prospects: potential editing clients, and outreach to them ----------
+  // Emails go through /api/outreach (Rich's Gmail, one at a time); Instagram and X messages are
+  // copied and the profile opened so Rich sends them himself.
+  const PROSPECT_STATUSES = [['new', 'New'], ['contacted', 'Contacted'], ['replied', 'Replied'], ['won', 'Became a client'], ['not_interested', 'Not interested'], ['opted_out', 'Asked not to be contacted']];
+  const PROSPECT_ORDER = { replied: 0, new: 1, contacted: 2, won: 3, not_interested: 4, opted_out: 5 };
+  let gmail = { connected: false, configured: false, email: '' };
+  const outreachApi = (path) => HQ_API.replace('/api/hq', path);
+  async function outreachCall(path, method, body) {
+    const res = await fetch(outreachApi(path), { method, headers: await authHeaders(), body: body ? JSON.stringify(body) : undefined });
+    const j = await res.json().catch(() => ({}));
+    if (!res.ok) throw Object.assign(new Error('outreach'), { code: (j.error && j.error.code) || 'http_' + res.status });
+    return j;
+  }
+  const OUTREACH_ERRORS = { gmail_not_connected: 'Connect Gmail on the Prospects page first.', gmail_reconnect: 'Gmail needs reconnecting on the Prospects page.', daily_limit: "That's today's email limit. Send the rest tomorrow.", opted_out: 'They asked not to be contacted.', no_email: 'No email saved for them.', gmail_not_configured: 'Gmail sending is not set up on the server yet.' };
+  async function outreachEmail(id, subject, body) {
+    try { const r = await outreachCall('/api/outreach', 'POST', { action: 'send_email', prospectId: id, subject, body }); toast('Email sent to ' + r.to); loadHq().catch(() => {}); return r; }
+    catch (e) { toast(OUTREACH_ERRORS[e.code] || "Couldn't send that email"); throw e; }
+  }
+  // Opens the profile first (browsers only allow that straight after a tap), then copies the message.
+  async function outreachDm(id, platform, url, message) {
+    const w = window.open(url, '_blank'); // ('noopener' would make this always null)
+    if (w) try { w.opener = null; } catch (e) {}
+    let copied = false;
+    try { await navigator.clipboard.writeText(message); copied = true; } catch (e) {}
+    toast(copied ? (w ? 'Message copied. Paste it in the DM.' : 'Message copied. Open their profile from Prospects.') : "Couldn't copy the message. Copy it from the card.");
+    const p = state.prospects.find(x => x.id === id);
+    if (p) {
+      const log = [...(Array.isArray(p.log) ? p.log : []), { at: Date.now(), via: platform }].slice(-10);
+      await db.doc('prospects/' + id).update({ status: !p.status || p.status === 'new' ? 'contacted' : p.status, lastContacted: Date.now(), log });
+    }
+  }
+  async function loadGmail() {
+    try { gmail = await outreachCall('/api/gmail', 'GET'); } catch (e) { $('gmailText').textContent = "Couldn't check Gmail."; return; }
+    const btn = $('gmailBtn');
+    if (!gmail.configured) { $('gmailText').textContent = 'Email sending isn\'t set up on the server yet (needs a Google sign-in client). Instagram and X work already.'; btn.hidden = true; }
+    else if (gmail.connected) { $('gmailText').textContent = `Sending emails from ${gmail.email || 'your Gmail'} · ${gmail.sentToday} of ${gmail.dailyLimit} sent today`; btn.hidden = false; btn.textContent = 'Disconnect'; btn.className = 'btn ghost small'; }
+    else { $('gmailText').textContent = 'Connect Gmail so Jarvis can send outreach emails from your address (it can only send, not read your inbox).'; btn.hidden = false; btn.textContent = 'Connect Gmail'; btn.className = 'btn small'; }
+    renderProspects();
+  }
+  $('gmailBtn').addEventListener('click', async () => {
+    try {
+      if (gmail.connected) { if (!confirm('Disconnect Gmail? Jarvis will stop being able to send emails.')) return; await outreachCall('/api/gmail', 'POST', { action: 'disconnect' }); loadGmail(); }
+      else { const r = await outreachCall('/api/gmail', 'POST', { action: 'connect' }); location.href = r.url; }
+    } catch (e) { toast(OUTREACH_ERRORS[e.code] || "Couldn't reach the server"); }
+  });
+  // Back from Google's sign-in page.
+  (function () {
+    const g = new URLSearchParams(location.search).get('gmail');
+    if (!g) return;
+    setTimeout(() => toast(g === 'connected' ? 'Gmail connected' : g === 'cancelled' ? 'Gmail connection cancelled' : "Couldn't connect Gmail. Try again."), 600);
+    try { history.replaceState(null, '', location.pathname + location.hash); } catch (e) {}
+  })();
+  const fmtSubs = (n) => n >= 1e6 ? (n / 1e6).toFixed(1).replace(/\.0$/, '') + 'M' : n >= 1e3 ? Math.round(n / 1e3) + 'K' : String(n || 0);
+  function renderProspects() {
+    const list = $('prospectList'); list.innerHTML = '';
+    const replied = state.prospects.filter(p => p.status === 'replied').length;
+    $('prospectsNavCount').hidden = !replied; $('prospectsNavCount').textContent = replied;
+    if (!state.prospects.length) { list.innerHTML = `<div class="empty">${state.loaded.prospects ? 'No prospects yet. Ask Jarvis: "find 10 YouTubers in gaming with 5K to 50K subscribers".' : 'Loading…'}</div>`; return; }
+    state.prospects.slice().sort((a, b) => (PROSPECT_ORDER[a.status || 'new'] - PROSPECT_ORDER[b.status || 'new']) || num(b.created) - num(a.created)).forEach(p => {
+      const row = document.createElement('div'); row.className = 'row prospect';
+      const text = document.createElement('div'); text.className = 'text';
+      const name = document.createElement(p.url ? 'a' : 'strong'); name.textContent = p.name || p.handle || 'Unnamed';
+      if (p.url) { name.href = p.url; name.target = '_blank'; name.rel = 'noopener'; name.className = 'prospect-name'; }
+      text.appendChild(name);
+      const meta = document.createElement('div'); meta.className = 'meta';
+      meta.textContent = [p.subscribers ? fmtSubs(p.subscribers) + ' subscribers' : '', p.videos ? p.videos + ' videos' : '', p.country, p.email, p.instagram ? 'IG @' + p.instagram : '', p.x ? 'X @' + p.x : '', p.lastContacted ? 'contacted ' + new Date(p.lastContacted).toLocaleDateString(undefined, { day: 'numeric', month: 'short' }) : ''].filter(Boolean).join(' · ');
+      text.appendChild(meta);
+      if (p.note) { const n = document.createElement('div'); n.className = 'meta'; n.textContent = 'Note: ' + p.note; text.appendChild(n); }
+      const blocked = p.status === 'opted_out' || p.status === 'not_interested';
+      if (p.draft && p.draft.message && !blocked) {
+        const box = document.createElement('div'); box.className = 'prospect-draft';
+        const label = document.createElement('div'); label.className = 'meta'; label.textContent = 'Draft for ' + (p.draft.channel === 'email' ? 'email' + (p.draft.subject ? ': ' + p.draft.subject : '') : p.draft.channel === 'x' ? 'X' : 'Instagram');
+        const ta = document.createElement('textarea'); ta.value = p.draft.message; ta.rows = 4; ta.setAttribute('aria-label', 'Draft message for ' + (p.name || ''));
+        ta.addEventListener('change', () => write(() => db.doc('prospects/' + p.id).update({ draft: { ...p.draft, message: ta.value } })));
+        const acts = document.createElement('div'); acts.className = 'prospect-acts';
+        const add = (label, fn) => { const b = document.createElement('button'); b.type = 'button'; b.className = 'btn small'; b.textContent = label; b.addEventListener('click', fn); acts.appendChild(b); };
+        if (p.email && gmail.connected) add('Send email', async () => { if (!confirm(`Send this email to ${p.email}?\n\n${p.draft.subject || '(no subject)'}`)) return; try { await outreachEmail(p.id, p.draft.subject || 'Video editing for ' + (p.name || 'your channel'), ta.value); loadGmail(); } catch (e) {} });
+        if (p.instagram) add('Copy & open Instagram', () => outreachDm(p.id, 'instagram', 'https://www.instagram.com/' + encodeURIComponent(p.instagram) + '/', ta.value));
+        if (p.x) add('Copy & open X', () => outreachDm(p.id, 'x', 'https://x.com/' + encodeURIComponent(p.x), ta.value));
+        box.append(label, ta, acts); text.appendChild(box);
+      }
+      const sel = document.createElement('select'); sel.setAttribute('aria-label', 'Status for ' + (p.name || ''));
+      PROSPECT_STATUSES.forEach(([v, l]) => { const o = document.createElement('option'); o.value = v; o.textContent = l; if ((p.status || 'new') === v) o.selected = true; sel.appendChild(o); });
+      sel.addEventListener('change', () => write(async () => { await db.doc('prospects/' + p.id).update({ status: sel.value }); toast('Marked ' + sel.options[sel.selectedIndex].text.toLowerCase()); }));
+      const del = document.createElement('button'); del.className = 'icon-btn'; del.type = 'button'; del.textContent = '✕'; del.setAttribute('aria-label', 'Remove ' + (p.name || 'prospect'));
+      del.addEventListener('click', () => { if (confirm('Remove ' + (p.name || 'this prospect') + '?')) write(async () => { await db.doc('prospects/' + p.id).delete(); toast('Prospect removed'); }); });
+      row.append(text, sel, del); list.appendChild(row);
+    });
+    applyWriteMode();
+  }
+  document.addEventListener('hq:page', (e) => { if (e.detail === 'prospects' && db) loadGmail(); });
+  document.addEventListener('hq:ready', () => { if (!$('prospects').hidden) loadGmail(); });
+
   // ---------- Agency clients ----------
   function renderAgency() {
     const list = $('agencyList'); list.innerHTML = '';
@@ -1412,7 +1519,7 @@
     write(async () => { await db.collection('agency').add({ name, email, note, active: true, created: Date.now() }); $('agencyForm').reset(); toast((name || email) + ' added. They\'re unlocked when they sign in.'); });
   });
 
-  function renderAll() { renderOverview(); renderTodos(); renderMonths(); renderCosts(); renderTesters(); renderLeads(); renderAgency(); }
+  function renderAll() { renderOverview(); renderTodos(); renderMonths(); renderCosts(); renderTesters(); renderLeads(); renderProspects(); renderAgency(); }
   renderAll();
 
 
@@ -1679,6 +1786,7 @@
     sub('testers', db.collection('testers'), renderTesters);
     sub('agency', db.collection('agency'), renderAgency);
     sub('leads', db.collection('leads'), renderLeads);
+    sub('prospects', db.collection('prospects'), renderProspects);
     loadServices(false);
     loadBugs();
     loadActivity();
@@ -1919,6 +2027,16 @@
   .jv-hud .jv-voicepick select { background: rgba(2, 10, 20, 0.92); border-color: rgba(57, 213, 255, 0.35); color: #BFF6FF; }
   .jv-hud.text .jv-voicepick { display: none; }
   .jv-hud .hint { color: #5F8AA3; }
+  /* Prospects */
+  .gmail-box { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin-bottom: 12px; padding: 10px 14px; border-radius: 12px; background: var(--panel); border: 1px solid var(--line); font-size: 13.5px; color: var(--muted); }
+  .gmail-box span { flex: 1 1 260px; }
+  .row.prospect .prospect-name { font-weight: 700; color: var(--ink); }
+  .prospect-draft { margin-top: 8px; }
+  /* On phones the name and draft take the full width, with the status and remove below. */
+  @media (max-width: 600px) { .row.prospect { flex-wrap: wrap; } .row.prospect .text { flex-basis: 100%; } .row.prospect select { flex: 1; } }
+  .prospect-draft textarea { width: 100%; margin-top: 4px; resize: vertical; font: inherit; font-size: 13.5px; line-height: 1.45; color: var(--ink); background: #0D0A14; border: 1px solid var(--field); border-radius: 10px; padding: 8px 10px; }
+  .prospect-acts { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
+  .jv-p-detail { flex-basis: 100%; white-space: pre-wrap; font-size: 13px; line-height: 1.45; color: #CFEFFA; background: rgba(2, 10, 20, 0.6); border-radius: 6px; padding: 8px 10px; max-height: 14em; overflow-y: auto; }
 </style>
 </body>
 </html>

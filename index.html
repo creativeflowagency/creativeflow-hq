@@ -199,6 +199,32 @@
   #signInMount { display: flex; justify-content: center; }
   .pill { font-size: 12px; font-weight: 700; padding: 2px 8px; border-radius: 8px; white-space: nowrap; }
   .pill.on { background: #CDFEE1; color: #0C5132; } .pill.off { background: var(--side); color: var(--muted); }
+  .pill.mid { background: #FFF4D4; color: var(--warn); } .pill.bad { background: #FEDAD9; color: #8E0B21; }
+  .tile .value.stack { font-size: 16px; line-height: 1.35; }
+  .client { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 10px 16px; padding: 14px 16px; border-top: 1px solid var(--line); }
+  .client:first-child { border-top: none; }
+  .client-name { font-weight: 700; font-size: 14px; overflow-wrap: anywhere; }
+  .client-badges { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
+  .client-line { margin-top: 3px; overflow-wrap: anywhere; color: var(--ink); font-size: 13.5px; }
+  .client-line .k { font-weight: 600; color: var(--muted); }
+  .client-figures { display: flex; flex-wrap: wrap; gap: 8px 16px; margin-top: 10px; }
+  .client-figures span { font-variant-numeric: tabular-nums; }
+  .client-figures .k { display: block; font-size: 11.5px; font-weight: 600; color: var(--muted); }
+  .client-figures .bad { color: var(--bad); font-weight: 700; } .client-figures .good { color: var(--good); font-weight: 700; }
+  .client-notes { margin-top: 8px; white-space: pre-wrap; overflow-wrap: anywhere; color: var(--ink); }
+  .client-side { display: flex; flex-direction: column; gap: 8px; align-items: stretch; min-width: 168px; }
+  .client-side label { display: grid; gap: 3px; font-size: 12px; font-weight: 600; color: var(--muted); }
+  .client-side select { width: 100%; }
+  .client-actions { display: flex; gap: 4px; justify-content: flex-end; }
+  .client-form .span { grid-column: 1 / -1; }
+  .client-form textarea {
+    font: inherit; font-size: 13.5px; color: var(--ink); background: var(--panel); width: 100%; resize: vertical;
+    border: 1px solid var(--field); border-radius: 8px; padding: 7px 10px;
+  }
+  @media (max-width: 640px) {
+    .client { grid-template-columns: minmax(0, 1fr); }
+    .client-side { min-width: 0; }
+  }
   .toast { position: fixed; left: 50%; bottom: calc(18px + env(safe-area-inset-bottom, 0px)); transform: translateX(-50%); background: #1A1A1A; color: #FFFFFF; padding: 9px 14px; border-radius: 10px; font-size: 13px; opacity: 0; transition: opacity 0.2s; pointer-events: none; }
   .toast.show { opacity: 1; }
 
@@ -232,6 +258,7 @@
       <a href="#bugs"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 6V4.8a3 3 0 0 1 6 0V6"/><rect x="5" y="6" width="10" height="11" rx="5"/><path d="M10 9.5v4.5M2.5 11h2.5M15 11h2.5M3.5 6.5l2 1.5M16.5 6.5l-2 1.5M3.5 16.5l2-1.5M16.5 16.5l-2-1.5"/></svg><span>Bugs</span><span class="nav-count" id="bugsNavCount" hidden></span></a>
       <a href="#leads"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2.5" y="4.5" width="15" height="11" rx="2"/><path d="m3 5.5 7 5.5 7-5.5"/></svg><span>Leads</span><span class="nav-count" id="leadsNavCount" hidden></span></a>
       <a href="#prospects"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="10" cy="10" r="7"/><circle cx="10" cy="10" r="3.5"/><circle cx="10" cy="10" r=".6" fill="currentColor"/></svg><span>Prospects</span><span class="nav-count" id="prospectsNavCount" hidden></span></a>
+      <a href="#clients"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="3" width="12" height="14" rx="2"/><path d="M7.5 3.2h5V5h-5z"/><path d="m7.2 11.2 1.7 1.7 3.9-4"/></svg><span>Clients</span></a>
       <a href="#agency"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 2.8 12.2 7.3l5 .7-3.6 3.5.8 5L10 14.2l-4.4 2.3.8-5L2.8 8l5-.7z"/></svg><span>Agency clients</span></a>
       <a href="#plan"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 5.5 7.5 3.5l5 2 4.5-2v11l-4.5 2-5-2L3 16.5z"/><path d="M7.5 3.5v11M12.5 5.5v11"/></svg><span>Plan</span></a>
     </nav>
@@ -249,6 +276,10 @@
       <div class="tile"><div class="label">Profit this month</div><div class="value" id="tProfit">–</div><div class="note">revenue minus all costs</div></div>
       <div class="tile"><div class="label">Fixed costs / month</div><div class="value" id="tFixed">–</div><div class="note">from Costs (yearly ÷ 12)</div></div>
       <div class="tile"><div class="label">Open to-dos</div><div class="value" id="tTodos">–</div><div class="note" id="tTodosNote"></div></div>
+    </div>
+    <div class="services-card">
+      <div class="services-head"><h3>Clients</h3><span class="services-summary" id="clientOverviewNote">Loading…</span></div>
+      <div class="tiles act-tiles" id="clientOverview"></div>
     </div>
     <div class="services-card activity-card">
       <div class="services-head"><h3>App activity</h3><span class="services-summary" id="actSummary">Loading…</span></div>
@@ -454,6 +485,47 @@
     <div class="group" id="prospectList"><div class="empty">Loading…</div></div>
   </section>
 
+  <section id="clients" aria-labelledby="clientsHead">
+    <h2 id="clientsHead">Clients</h2>
+    <p class="section-sub">Editing clients: who's signed, and who's paid. Half is due before the edit, and the other half when it's done. Amounts stay in the currency you pick for each client.</p>
+    <div class="tiles" id="clientTiles"></div>
+    <div class="bug-tabs" id="clientFilters" role="tablist" aria-label="Filter clients"></div>
+    <div class="group" id="clientList"><div class="empty">Loading…</div></div>
+    <form class="month-form client-form" id="clientForm" autocomplete="off">
+      <label>Name<input type="text" id="clientName" maxlength="80" required placeholder="Client name" aria-label="Client name"></label>
+      <label>Business / channel<input type="text" id="clientBusiness" maxlength="120" placeholder="Channel or business" aria-label="Business or channel"></label>
+      <label class="span">What they ordered<input type="text" id="clientOrder" maxlength="200" placeholder="1 long-form YouTube edit + 5 Shorts" aria-label="What they ordered"></label>
+      <label>Signed
+        <select id="clientSigned" aria-label="Signed status">
+          <option value="not_signed">Not signed</option>
+          <option value="signed">Signed</option>
+        </select>
+      </label>
+      <label>Payment
+        <select id="clientPayment" aria-label="Payment status">
+          <option value="unpaid">Unpaid</option>
+          <option value="deposit">Deposit paid (50%)</option>
+          <option value="paid">Paid in full</option>
+        </select>
+      </label>
+      <label>Currency
+        <select id="clientCurrency" aria-label="Currency">
+          <option value="USD">USD</option>
+          <option value="ISK">ISK</option>
+        </select>
+      </label>
+      <label>Agreed amount<input type="number" id="clientAgreed" min="0" step="any" inputmode="decimal" aria-label="Agreed amount"></label>
+      <label>Amount paid<input type="number" id="clientPaid" min="0" step="any" inputmode="decimal" aria-label="Amount paid"></label>
+      <label class="span">Notes<textarea id="clientNotes" maxlength="500" rows="2" placeholder="Optional" aria-label="Notes"></textarea></label>
+      <div class="actions span">
+        <button class="btn" type="submit" id="clientSave">Add client</button>
+        <button class="btn ghost" type="button" id="clientPackage">Fill main package</button>
+        <button class="btn ghost" type="button" id="clientCancel" hidden>Cancel</button>
+      </div>
+    </form>
+    <p class="hint">Main package is 1 long-form YouTube edit + 5 Shorts: $176, or 21,500 ISK, using the currency selected above. Choosing Deposit paid or Paid in full fills in the amount paid from the agreed amount. Nothing here is converted between USD and ISK.</p>
+  </section>
+
   <section id="agency" aria-labelledby="agencyHead">
     <h2 id="agencyHead">Agency clients</h2>
     <p class="section-sub">Active agency clients get <strong>Creator Max</strong> (all AI and Max features). When a client leaves, press <strong>End</strong>: they keep <strong>Basic for life</strong>, and the AI and Max features stop. Add their name and the email they'll sign up with: when they sign in to CreativeFlow with that email (email, Google or Apple), it unlocks automatically. No Gumroad needed.</p>
@@ -546,7 +618,7 @@
   const TESTER_STATUS = { invited: 'Invited', testing: 'Testing', feedback: 'Gave feedback', done: 'Done' };
 
   let db = null, canWrite = true;
-  const state = { todos: [], months: [], costs: [], testers: [], agency: [], leads: [], prospects: [], loaded: { todos: false, months: false, costs: false, testers: false, agency: false, leads: false, prospects: false } };
+  const state = { todos: [], months: [], costs: [], testers: [], agency: [], leads: [], prospects: [], clients: [], loaded: { todos: false, months: false, costs: false, testers: false, agency: false, leads: false, prospects: false, clients: false } };
   let editingCostId = null;
 
   function toast(msg) {
@@ -579,6 +651,7 @@
   // ---------- Overview ----------
   function renderOverview() {
     renderPies();
+    renderClientOverview();
     const latest = state.months[state.months.length - 1];
     if (latest) {
       $('tMembers').textContent = num(latest.members);
@@ -890,7 +963,7 @@
   });
 
   // ---------- Pages: one section at a time, chosen from the menu (#todos etc. in the link opens that page) ----------
-  const PAGES = ['overview', 'jarvis', 'todos', 'money', 'costs', 'testers', 'bugs', 'leads', 'prospects', 'agency', 'plan'];
+  const PAGES = ['overview', 'jarvis', 'todos', 'money', 'costs', 'testers', 'bugs', 'leads', 'prospects', 'clients', 'agency', 'plan'];
   function showPage(name, focus) {
     if (!PAGES.includes(name)) name = 'overview';
     PAGES.forEach(p => { $(p).hidden = p !== name; });
@@ -1487,6 +1560,308 @@
   document.addEventListener('hq:page', (e) => { if (e.detail === 'prospects' && db) loadGmail(); });
   document.addEventListener('hq:ready', () => { if (!$('prospects').hidden) loadGmail(); });
 
+  // ---------- Clients: signed and paid, stored with the rest of HQ ----------
+  const CLIENT_CURRENCIES = ['USD', 'ISK'];
+  const PACKAGE_ORDER = '1 long-form YouTube edit + 5 Shorts';
+  const PACKAGE_PRICE = { USD: 176, ISK: 21500 };
+  const CLIENT_FILTERS = [
+    ['all', 'All', () => true],
+    ['signed', 'Signed', (c) => clientSigned(c)],
+    ['not_signed', 'Not signed', (c) => !clientSigned(c)],
+    ['paid', 'Paid in full', (c) => clientPayment(c) === 'paid'],
+    ['deposit', 'Deposit paid', (c) => clientPayment(c) === 'deposit'],
+    ['unpaid', 'Unpaid', (c) => clientPayment(c) === 'unpaid']
+  ];
+  let clientFilter = 'all', editingClientId = null, clientPaidTouched = false;
+
+  function clientCurrency(c) { return c && c.currency === 'ISK' ? 'ISK' : 'USD'; }
+  function clientSigned(c) { return c.signed === 'signed'; }
+  function clientPayment(c) { return c.payment === 'deposit' || c.payment === 'paid' ? c.payment : 'unpaid'; }
+  function roundClientMoney(n, currency) {
+    const v = num(n);
+    return currency === 'ISK' ? Math.round(v) : Math.round(v * 100) / 100;
+  }
+  function formatClientMoney(n, currency) {
+    const v = roundClientMoney(n, currency);
+    const sign = v < 0 ? '−' : '';
+    const abs = Math.abs(v);
+    if (currency === 'ISK') return sign + abs.toLocaleString(undefined, { maximumFractionDigits: 0 }) + ' ISK';
+    return sign + '$' + abs.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 2 });
+  }
+  function clientOwedAmount(c) { return roundClientMoney(num(c.agreed) - num(c.paid), clientCurrency(c)); }
+  function paidForStatus(payment, agreed, currency) {
+    const a = Math.max(0, num(agreed));
+    if (payment === 'paid') return roundClientMoney(a, currency);
+    if (payment === 'deposit') return roundClientMoney(a / 2, currency);
+    return 0;
+  }
+  function clientStats(list) {
+    const signed = list.filter(clientSigned).length;
+    const outstanding = { USD: 0, ISK: 0 };
+    const present = { USD: false, ISK: false };
+    list.forEach(c => {
+      const cur = clientCurrency(c);
+      present[cur] = true;
+      const owed = num(c.agreed) - num(c.paid);
+      if (owed > 0) outstanding[cur] += owed;
+    });
+    outstanding.USD = roundClientMoney(outstanding.USD, 'USD');
+    outstanding.ISK = roundClientMoney(outstanding.ISK, 'ISK');
+    return {
+      total: list.length,
+      signed,
+      notSigned: list.length - signed,
+      paidFull: list.filter(c => clientPayment(c) === 'paid').length,
+      deposit: list.filter(c => clientPayment(c) === 'deposit').length,
+      unpaid: list.filter(c => clientPayment(c) === 'unpaid').length,
+      owing: list.filter(c => clientOwedAmount(c) > 0).length,
+      outstanding,
+      present
+    };
+  }
+  function outstandingText(stats) {
+    return CLIENT_CURRENCIES.filter(cur => stats.present[cur]).map(cur => formatClientMoney(stats.outstanding[cur], cur)).join(' · ');
+  }
+  function clientTile(label, value, note, valueClass) {
+    return '<div class="tile"><div class="label">' + esc(label) + '</div><div class="value' + (valueClass ? ' ' + valueClass : '') + '">' + esc(value) + '</div><div class="note">' + esc(note) + '</div></div>';
+  }
+  function clientSummaryTiles(loaded) {
+    if (!loaded) return ['Signed', 'Not signed', 'Paid in full', 'Owing money', 'Outstanding'].map(label => clientTile(label, '–', '')).join('');
+    const s = clientStats(state.clients);
+    const due = outstandingText(s);
+    const dueShown = due || '–';
+    const currencies = CLIENT_CURRENCIES.filter(cur => s.present[cur]).length;
+    const dueNote = !s.total ? 'no clients yet' : currencies > 1 ? 'each currency, not converted' : 'still to collect';
+    const dueOwed = s.outstanding.USD > 0 || s.outstanding.ISK > 0;
+    return clientTile('Signed', String(s.signed), s.total ? 'of ' + s.total + ' clients' : 'no clients yet')
+      + clientTile('Not signed', String(s.notSigned), 'agreement not signed')
+      + clientTile('Paid in full', String(s.paidFull), 'nothing left on these')
+      + clientTile('Owing money', String(s.owing), 'agreed amount not fully paid', s.owing ? 'bad' : '')
+      + clientTile('Outstanding', dueShown, dueNote, dueOwed ? 'bad stack' : (due ? 'stack' : ''));
+  }
+  function renderClientOverview() {
+    const box = $('clientOverview');
+    if (!box) return;
+    box.innerHTML = clientSummaryTiles(state.loaded.clients);
+    const note = $('clientOverviewNote');
+    if (!state.loaded.clients) { note.textContent = 'Loading…'; return; }
+    const s = clientStats(state.clients);
+    const due = outstandingText(s);
+    note.textContent = !s.total ? 'No clients yet' : s.owing + ' owing' + (due ? ' · ' + due + ' outstanding' : '');
+  }
+  function formCurrency() { return $('clientCurrency').value === 'ISK' ? 'ISK' : 'USD'; }
+  function fillPaidFromForm() {
+    $('clientPaid').value = String(paidForStatus($('clientPayment').value, $('clientAgreed').value, formCurrency()));
+    clientPaidTouched = false;
+  }
+  function resetClientForm() {
+    editingClientId = null;
+    clientPaidTouched = false;
+    $('clientForm').reset();
+    $('clientSave').textContent = 'Add client';
+    $('clientCancel').hidden = true;
+  }
+  function renderClientFilters(stats) {
+    const bar = $('clientFilters');
+    bar.innerHTML = '';
+    const counts = { all: stats.total, signed: stats.signed, not_signed: stats.notSigned, paid: stats.paidFull, deposit: stats.deposit, unpaid: stats.unpaid };
+    CLIENT_FILTERS.forEach(([id, label]) => {
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'bug-tab';
+      btn.setAttribute('role', 'tab');
+      btn.setAttribute('aria-selected', String(clientFilter === id));
+      btn.textContent = label + ' · ' + (state.loaded.clients ? counts[id] : '–');
+      btn.addEventListener('click', () => { clientFilter = id; renderClients(); });
+      bar.appendChild(btn);
+    });
+  }
+  function clientCard(c) {
+    const cur = clientCurrency(c);
+    const owed = clientOwedAmount(c);
+    const editing = editingClientId === c.id;
+    const card = document.createElement('div');
+    card.className = 'client';
+    const main = document.createElement('div');
+    const name = document.createElement('div');
+    name.className = 'client-name';
+    name.textContent = c.name || '(no name)';
+    const badges = document.createElement('div');
+    badges.className = 'client-badges';
+    const signedPill = document.createElement('span');
+    signedPill.className = 'pill ' + (clientSigned(c) ? 'on' : 'off');
+    signedPill.textContent = clientSigned(c) ? 'Signed' : 'Not signed';
+    const pay = clientPayment(c);
+    const payPill = document.createElement('span');
+    payPill.className = 'pill ' + (pay === 'paid' ? 'on' : pay === 'deposit' ? 'mid' : 'bad');
+    payPill.textContent = pay === 'paid' ? 'Paid in full' : pay === 'deposit' ? 'Deposit paid (50%)' : 'Unpaid';
+    badges.append(signedPill, payPill);
+    main.appendChild(name);
+    main.appendChild(badges);
+    const business = document.createElement('div');
+    business.className = 'client-line';
+    business.append(Object.assign(document.createElement('span'), { className: 'k', textContent: 'Business / channel · ' }), document.createTextNode(c.business || '–'));
+    const order = document.createElement('div');
+    order.className = 'client-line';
+    order.append(Object.assign(document.createElement('span'), { className: 'k', textContent: 'Ordered · ' }), document.createTextNode(c.order || '–'));
+    const figures = document.createElement('div');
+    figures.className = 'client-figures';
+    [['Agreed', formatClientMoney(c.agreed, cur), ''], ['Paid', formatClientMoney(c.paid, cur), ''], ['Owed', formatClientMoney(owed, cur), owed > 0 ? 'bad' : owed < 0 ? '' : 'good'], ['Currency', cur, '']].forEach(([label, value, cls]) => {
+      const cell = document.createElement('span');
+      const k = document.createElement('span');
+      k.className = 'k';
+      k.textContent = label;
+      const v = document.createElement('span');
+      if (cls) v.className = cls;
+      v.textContent = value;
+      cell.append(k, v);
+      figures.appendChild(cell);
+    });
+    main.append(business, order, figures);
+    if (c.notes) {
+      const notes = document.createElement('div');
+      notes.className = 'client-notes';
+      notes.textContent = c.notes;
+      main.appendChild(notes);
+    }
+    const side = document.createElement('div');
+    side.className = 'client-side';
+    const signedLabel = document.createElement('label');
+    signedLabel.append(document.createTextNode('Signed'));
+    const signedSel = document.createElement('select');
+    signedSel.setAttribute('aria-label', 'Signed status for ' + (c.name || 'client'));
+    [['not_signed', 'Not signed'], ['signed', 'Signed']].forEach(([v, l]) => {
+      const o = document.createElement('option'); o.value = v; o.textContent = l; if ((clientSigned(c) ? 'signed' : 'not_signed') === v) o.selected = true; signedSel.appendChild(o);
+    });
+    signedSel.disabled = !canWrite || editing;
+    signedSel.addEventListener('change', () => write(async () => {
+      await db.doc('clients/' + c.id).update({ signed: signedSel.value });
+      toast(signedSel.value === 'signed' ? 'Marked signed' : 'Marked not signed');
+    }));
+    signedLabel.appendChild(signedSel);
+    const payLabel = document.createElement('label');
+    payLabel.append(document.createTextNode('Payment'));
+    const paySel = document.createElement('select');
+    paySel.setAttribute('aria-label', 'Payment status for ' + (c.name || 'client'));
+    [['unpaid', 'Unpaid'], ['deposit', 'Deposit paid (50%)'], ['paid', 'Paid in full']].forEach(([v, l]) => {
+      const o = document.createElement('option'); o.value = v; o.textContent = l; if (clientPayment(c) === v) o.selected = true; paySel.appendChild(o);
+    });
+    paySel.disabled = !canWrite || editing;
+    paySel.addEventListener('change', () => {
+      const payment = paySel.value;
+      const paid = paidForStatus(payment, c.agreed, cur);
+      write(async () => {
+        await db.doc('clients/' + c.id).update({ payment, paid });
+        const word = payment === 'paid' ? 'Paid in full' : payment === 'deposit' ? 'Deposit paid' : 'Unpaid';
+        toast(word + ' · ' + formatClientMoney(paid, cur) + ' paid');
+      });
+    });
+    payLabel.appendChild(paySel);
+    const actions = document.createElement('div');
+    actions.className = 'client-actions';
+    const edit = document.createElement('button');
+    edit.className = 'icon-btn';
+    edit.type = 'button';
+    edit.textContent = editing ? 'Editing' : 'Edit';
+    edit.setAttribute('aria-label', 'Edit ' + (c.name || 'client'));
+    edit.addEventListener('click', () => {
+      editingClientId = c.id;
+      $('clientName').value = c.name || '';
+      $('clientBusiness').value = c.business || '';
+      $('clientOrder').value = c.order || '';
+      $('clientNotes').value = c.notes || '';
+      $('clientSigned').value = clientSigned(c) ? 'signed' : 'not_signed';
+      $('clientPayment').value = clientPayment(c);
+      $('clientCurrency').value = cur;
+      $('clientAgreed').value = c.agreed == null || c.agreed === '' ? '' : String(roundClientMoney(c.agreed, cur));
+      $('clientPaid').value = c.paid == null || c.paid === '' ? '' : String(roundClientMoney(c.paid, cur));
+      clientPaidTouched = true;
+      $('clientSave').textContent = 'Save client';
+      $('clientCancel').hidden = false;
+      renderClients();
+      $('clientName').focus();
+      $('clientForm').scrollIntoView({ block: 'nearest' });
+    });
+    const del = document.createElement('button');
+    del.className = 'icon-btn';
+    del.type = 'button';
+    del.textContent = 'Delete';
+    del.setAttribute('aria-label', 'Delete ' + (c.name || 'client'));
+    del.addEventListener('click', () => {
+      if (!confirm('Delete ' + (c.name || 'this client') + '? This only removes them from the tracker.')) return;
+      write(async () => {
+        await db.doc('clients/' + c.id).delete();
+        if (editingClientId === c.id) resetClientForm();
+        toast('Client deleted');
+      });
+    });
+    actions.append(edit, del);
+    side.append(signedLabel, payLabel, actions);
+    card.append(main, side);
+    return card;
+  }
+  function renderClients() {
+    $('clientTiles').innerHTML = clientSummaryTiles(state.loaded.clients);
+    const stats = clientStats(state.clients);
+    renderClientFilters(stats);
+    const list = $('clientList');
+    list.innerHTML = '';
+    if (!state.loaded.clients) { list.innerHTML = '<div class="empty">Loading…</div>'; return; }
+    if (!state.clients.length) { list.innerHTML = '<div class="empty">No clients yet. Add one below.</div>'; return; }
+    const match = CLIENT_FILTERS.find(f => f[0] === clientFilter) || CLIENT_FILTERS[0];
+    const rows = state.clients.filter(match[2]).slice().sort((a, b) => num(b.created) - num(a.created) || String(a.name || '').localeCompare(String(b.name || '')));
+    if (!rows.length) { list.innerHTML = '<div class="empty">No clients in this filter.</div>'; return; }
+    rows.forEach(c => list.appendChild(clientCard(c)));
+    applyWriteMode();
+  }
+  $('clientPayment').addEventListener('change', fillPaidFromForm);
+  $('clientAgreed').addEventListener('input', () => { if (!clientPaidTouched) fillPaidFromForm(); });
+  $('clientPaid').addEventListener('input', () => { clientPaidTouched = true; });
+  $('clientCurrency').addEventListener('change', () => {
+    const cur = formCurrency();
+    const prev = cur === 'ISK' ? 'USD' : 'ISK';
+    if ($('clientOrder').value.trim() === PACKAGE_ORDER && num($('clientAgreed').value) === PACKAGE_PRICE[prev]) $('clientAgreed').value = String(PACKAGE_PRICE[cur]);
+    if (!clientPaidTouched) fillPaidFromForm();
+  });
+  $('clientPackage').addEventListener('click', () => {
+    const cur = formCurrency();
+    $('clientOrder').value = PACKAGE_ORDER;
+    $('clientAgreed').value = String(PACKAGE_PRICE[cur]);
+    fillPaidFromForm();
+    toast(cur === 'ISK' ? 'Main package filled in: 21,500 ISK' : 'Main package filled in: $176');
+  });
+  $('clientCancel').addEventListener('click', () => { resetClientForm(); renderClients(); });
+  $('clientForm').addEventListener('submit', (e) => {
+    e.preventDefault();
+    const name = $('clientName').value.trim();
+    if (!name) { toast('Add the client’s name'); return; }
+    const currency = formCurrency();
+    const agreed = roundClientMoney(Math.max(0, num($('clientAgreed').value)), currency);
+    const paid = $('clientPaid').value.trim() === ''
+      ? paidForStatus($('clientPayment').value, agreed, currency)
+      : roundClientMoney(Math.max(0, num($('clientPaid').value)), currency);
+    const existing = editingClientId ? state.clients.find(c => c.id === editingClientId) : null;
+    const body = {
+      name,
+      business: $('clientBusiness').value.trim(),
+      order: $('clientOrder').value.trim(),
+      notes: $('clientNotes').value.trim(),
+      signed: $('clientSigned').value === 'signed' ? 'signed' : 'not_signed',
+      payment: $('clientPayment').value === 'deposit' || $('clientPayment').value === 'paid' ? $('clientPayment').value : 'unpaid',
+      currency,
+      agreed,
+      paid,
+      created: existing && existing.created ? existing.created : Date.now()
+    };
+    const id = editingClientId;
+    write(async () => {
+      if (id) await db.doc('clients/' + id).set(body);
+      else await db.collection('clients').add(body);
+      resetClientForm();
+      toast(id ? 'Client updated' : 'Client added');
+    });
+  });
+
   // ---------- Agency clients ----------
   function renderAgency() {
     const list = $('agencyList'); list.innerHTML = '';
@@ -1519,7 +1894,7 @@
     write(async () => { await db.collection('agency').add({ name, email, note, active: true, created: Date.now() }); $('agencyForm').reset(); toast((name || email) + ' added. They\'re unlocked when they sign in.'); });
   });
 
-  function renderAll() { renderOverview(); renderTodos(); renderMonths(); renderCosts(); renderTesters(); renderLeads(); renderProspects(); renderAgency(); }
+  function renderAll() { renderOverview(); renderTodos(); renderMonths(); renderCosts(); renderTesters(); renderLeads(); renderProspects(); renderClients(); renderAgency(); }
   renderAll();
 
 
@@ -1787,6 +2162,7 @@
     sub('agency', db.collection('agency'), renderAgency);
     sub('leads', db.collection('leads'), renderLeads);
     sub('prospects', db.collection('prospects'), renderProspects);
+    sub('clients', db.collection('clients'), renderClients);
     loadServices(false);
     loadBugs();
     loadActivity();
@@ -1863,6 +2239,12 @@
   .est { background: rgba(242, 201, 76, 0.18); color: #F2C94C; }
   .pill.on { background: rgba(87, 217, 163, 0.16); color: #57D9A3; }
   .pill.off { background: rgba(255, 255, 255, 0.06); color: var(--muted); }
+  .pill.mid { background: rgba(242, 201, 76, 0.16); color: #F2C94C; }
+  .pill.bad { background: rgba(255, 107, 125, 0.16); color: #FF9AA8; }
+  .client-form textarea { background: #0D0A14; border: 1px solid var(--field); border-radius: 10px; padding: 9px 12px; color: var(--ink); }
+  .client-form textarea::placeholder { color: #7E7696; }
+  .client-form textarea:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; border-color: var(--accent); }
+  #clientOverview { margin-bottom: 0; }
   .row input[type="checkbox"] { accent-color: #8358FF; }
   .legend li.on { background: var(--accent-soft); }
   .toast { background: #8358FF; border-radius: 12px; font-weight: 600; }

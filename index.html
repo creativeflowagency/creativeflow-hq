@@ -450,15 +450,81 @@
 
   <section id="newsletter" aria-labelledby="newsletterHead">
     <h2 id="newsletterHead">Newsletter</h2>
-    <p class="section-sub">People who sign up at <a href="https://creativeflow.media/newsletter/" target="_blank" rel="noopener">creativeflow.media/newsletter</a> land here. Download the list to send with any email tool; each person's unsubscribe link is included.</p>
-    <div class="newsletter-bar">
-      <span id="newsletterSummary">Loading…</span>
-      <span class="newsletter-acts">
-        <button type="button" class="btn small ghost" id="newsletterCopy">Copy emails</button>
-        <button type="button" class="btn small" id="newsletterCsv">Download list (CSV)</button>
-      </span>
+    <p class="section-sub">Your own email list. People join at <a href="https://creativeflow.media/newsletter/" target="_blank" rel="noopener">creativeflow.media/newsletter</a> or from the app page; write, send and track every email here.</p>
+    <div class="nl-setup" id="nlSetup" hidden></div>
+    <div class="bug-tabs" role="tablist" aria-label="Newsletter">
+      <button type="button" class="bug-tab nl-tab" data-tab="overview" role="tab">Overview</button>
+      <button type="button" class="bug-tab nl-tab" data-tab="subscribers" role="tab">Subscribers</button>
+      <button type="button" class="bug-tab nl-tab" data-tab="write" role="tab">Write</button>
+      <button type="button" class="bug-tab nl-tab" data-tab="sent" role="tab">Sent</button>
     </div>
-    <div class="group" id="subscriberList"><div class="empty">Loading…</div></div>
+
+    <div class="nl-pane" data-pane="overview">
+      <div class="tiles" id="nlTiles"></div>
+      <div class="group nl-chart-card">
+        <div class="nl-chart-head"><strong>New subscribers, last 30 days</strong><span class="meta" id="nlChartTotal"></span></div>
+        <div id="nlChart" class="nl-chart"></div>
+        <details class="nl-table-toggle"><summary>Show as a table</summary><div id="nlChartTable"></div></details>
+      </div>
+      <div class="group nl-sources" id="nlSources"></div>
+    </div>
+
+    <div class="nl-pane" data-pane="subscribers" hidden>
+      <div class="newsletter-bar">
+        <span class="nl-filters">
+          <input type="text" id="nlSearch" placeholder="Search name or email" aria-label="Search subscribers">
+          <select id="nlStatus" aria-label="Show">
+            <option value="subscribed">Subscribed</option>
+            <option value="all">Everyone</option>
+            <option value="left">Unsubscribed, bounced or spam</option>
+          </select>
+        </span>
+        <span class="newsletter-acts">
+          <button type="button" class="btn small ghost" id="newsletterCopy">Copy emails</button>
+          <button type="button" class="btn small" id="newsletterCsv">Download list (CSV)</button>
+        </span>
+      </div>
+      <p class="meta" id="newsletterSummary">Loading…</p>
+      <div class="group" id="subscriberList"><div class="empty">Loading…</div></div>
+    </div>
+
+    <div class="nl-pane" data-pane="write" hidden>
+      <div class="nl-drafts" id="nlDrafts"></div>
+      <div class="nl-compose">
+        <div class="nl-editor group">
+          <label class="nl-field">Subject<input type="text" id="nlSubject" maxlength="200" placeholder="What's this email about?"></label>
+          <label class="nl-field">Preview text <span class="meta">(shows next to the subject in inboxes)</span><input type="text" id="nlPreview" maxlength="200" placeholder="One line that makes them open it"></label>
+          <div class="nl-toolbar" role="toolbar" aria-label="Formatting">
+            <button type="button" data-md="h1" title="Big heading">H1</button>
+            <button type="button" data-md="h2" title="Small heading">H2</button>
+            <button type="button" data-md="bold" title="Bold"><strong>B</strong></button>
+            <button type="button" data-md="italic" title="Italic"><em>I</em></button>
+            <button type="button" data-md="list" title="Bullet list">• List</button>
+            <button type="button" data-md="link" title="Link">Link</button>
+            <button type="button" data-md="image" title="Image from a web address">Image</button>
+            <button type="button" data-md="name" title="Their first name">{{name}}</button>
+          </div>
+          <textarea id="nlBody" rows="16" placeholder="Hi {{name}},&#10;&#10;Write your email here. Leave a blank line between paragraphs."></textarea>
+          <p class="meta nl-hint"># heading · **bold** · *italic* · - bullet · [text](https://link) · ![image](https://image) · {{name}} becomes their first name</p>
+          <div class="nl-actions">
+            <button type="button" class="btn small ghost" id="nlNew">New email</button>
+            <button type="button" class="btn small ghost" id="nlSave">Save draft</button>
+            <button type="button" class="btn small ghost" id="nlTest">Send a test</button>
+            <button type="button" class="btn small" id="nlSend">Send to subscribers</button>
+          </div>
+          <p class="meta" id="nlComposeMsg" role="status" aria-live="polite"></p>
+        </div>
+        <div class="nl-preview group">
+          <div class="nl-chart-head"><strong>Preview</strong><span class="meta">how it looks in the inbox</span></div>
+          <iframe id="nlFrame" title="Email preview" sandbox=""></iframe>
+        </div>
+      </div>
+    </div>
+
+    <div class="nl-pane" data-pane="sent" hidden>
+      <div id="nlSentList" class="group"><div class="empty">Loading…</div></div>
+      <div id="nlDetail" hidden></div>
+    </div>
   </section>
 
   <section id="prospects" aria-labelledby="prospectsHead">
@@ -957,32 +1023,142 @@
     applyWriteMode();
   }
 
-  // ---------- Newsletter (creativeflow.media/newsletter, via /api/subscribe) ----------
-  const subscribed = () => state.subscribers.filter(s => s.status !== 'unsubscribed');
+  // ---------- Newsletter: list, writing, sending and stats (/api/subscribe, /api/newsletter) ----------
+  // Subscribers live in HQ (state.subscribers); emails, sending and opens/clicks come from
+  // /api/newsletter, which sends through Resend.
+  const nlEsc = (t) => String(t == null ? '' : t).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  const pct = (x) => (x * 100).toFixed(x > 0 && x < 0.1 ? 1 : 0) + '%';
+  const shortDate = (t) => t ? new Date(t).toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' }) : '';
+  const NL_STATUS = { subscribed: ['Subscribed', 'on'], unsubscribed: ['Unsubscribed', 'off'], bounced: ['Bounced', 'off'], complained: ['Marked as spam', 'off'] };
+  const NL_ERRORS = { not_configured: 'Sending isn\'t set up yet: add your Resend key in Netlify (see the box at the top).', empty: 'Add a subject and some text first.',
+    no_subscribers: 'There\'s nobody subscribed yet.', daily_limit: 'That\'s today\'s sending limit. The rest go out tomorrow on their own.', bad_email: 'That email doesn\'t look right.',
+    already_sent: 'That email has already been sent.', resend_key: 'Resend didn\'t accept the key. Check RESEND_API_KEY in Netlify.', resend_error: 'Resend refused the email. Check the From address is on your verified domain.',
+    resend_unreachable: 'Couldn\'t reach Resend. Try again in a minute.', resend_rate_limited: 'Resend asked to slow down. Try again in a minute.' };
+  const subscribed = () => state.subscribers.filter(s => (s.status || 'subscribed') === 'subscribed');
   const unsubLink = (s) => s.token ? `https://creativeflow.media/newsletter/?unsubscribe=${s.id}.${s.token}` : '';
-  function renderNewsletter() {
+  let nl = { tab: 'overview', info: null, loading: false, editing: null, detail: null };
+  try { nl.tab = localStorage.getItem('hq.nlTab') || 'overview'; } catch (e) {}
+  const nlApi = (method, body) => outreachCall('/api/newsletter', method, body);
+
+  function nlShowTab(tab) {
+    nl.tab = tab; try { localStorage.setItem('hq.nlTab', tab); } catch (e) {}
+    document.querySelectorAll('.nl-tab').forEach(t => t.setAttribute('aria-selected', String(t.dataset.tab === tab)));
+    document.querySelectorAll('.nl-pane').forEach(p => { p.hidden = p.dataset.pane !== tab; });
+    if (tab === 'write') nlPreviewSoon(0);
+  }
+  document.querySelectorAll('.nl-tab').forEach(t => t.addEventListener('click', () => nlShowTab(t.dataset.tab)));
+  nlShowTab(nl.tab);
+
+  async function nlLoad() {
+    if (nl.loading) return; nl.loading = true;
+    try { nl.info = await nlApi('GET'); }
+    catch (e) { nl.info = nl.info || null; }
+    nl.loading = false;
+    renderNewsletter();
+  }
+
+  function nlSetupBox() {
+    const box = $('nlSetup');
+    if (!nl.info || nl.info.ready) { box.hidden = true; return; }
+    box.hidden = false;
+    box.innerHTML = '<strong>Sending isn\'t switched on yet.</strong> Signups are already being saved. To send emails, make a free <a href="https://resend.com" target="_blank" rel="noopener">Resend</a> account, verify creativeflow.media there, then add <code>RESEND_API_KEY</code> and <code>NEWSLETTER_FROM</code> (e.g. <code>Rich from CreativeFlow &lt;rich@creativeflow.media&gt;</code>) in Netlify.';
+  }
+
+  // Overview: tiles, 30-day signups chart, where people join.
+  function nlOverview() {
+    const all = state.subscribers, on = subscribed();
+    const now = Date.now(), DAY = 86400000;
+    const week = all.filter(s => num(s.created) > now - 7 * DAY).length;
+    const left = all.filter(s => (s.status || 'subscribed') !== 'subscribed').length;
+    const sentCampaigns = ((nl.info && nl.info.campaigns) || []).filter(c => c.status !== 'draft' && c.stats && c.stats.sent);
+    const avg = (k) => sentCampaigns.length ? sentCampaigns.reduce((a, c) => a + c.stats[k], 0) / sentCampaigns.length : null;
+    const openR = avg('openRate'), clickR = avg('clickRate');
+    const tile = (label, value, note) => `<div class="tile"><div class="label">${label}</div><div class="value">${value}</div><div class="note">${note}</div></div>`;
+    $('nlTiles').innerHTML =
+      tile('Subscribers', on.length.toLocaleString(), left ? `${left} left the list` : 'nobody has left') +
+      tile('New this week', '+' + week, `${all.filter(s => num(s.created) > now - 30 * DAY).length} in the last 30 days`) +
+      tile('Average open rate', openR == null ? '–' : pct(openR), sentCampaigns.length ? `over ${sentCampaigns.length} email${sentCampaigns.length === 1 ? '' : 's'}` : 'after your first email') +
+      tile('Average click rate', clickR == null ? '–' : pct(clickR), nl.info ? `${nl.info.sentToday} of ${nl.info.dailyLimit} emails sent today` : 'people who clicked a link');
+
+    // One bar per day; a single series, so no legend: the title names it.
+    const days = [];
+    for (let i = 29; i >= 0; i--) {
+      const d = new Date(now - i * DAY); const key = d.toISOString().slice(0, 10);
+      days.push({ key, label: d.toLocaleDateString(undefined, { day: 'numeric', month: 'short' }), n: 0 });
+    }
+    const idx = Object.fromEntries(days.map((d, i) => [d.key, i]));
+    all.forEach(s => { const k = s.created ? new Date(s.created).toISOString().slice(0, 10) : ''; if (k in idx) days[idx[k]].n++; });
+    const total = days.reduce((a, d) => a + d.n, 0);
+    $('nlChartTotal').textContent = total + ' total';
+    const max = Math.max(1, ...days.map(d => d.n));
+    const W = 600, H = 150, padB = 20, padT = 8, gap = 2, bw = W / days.length - gap;
+    const y = (n) => (H - padB) - (n / max) * (H - padB - padT);
+    const bar = (x, top, w, h) => h <= 0 ? '' : `M${x},${H - padB}V${top + Math.min(4, h)}Q${x},${top} ${x + Math.min(4, w / 2)},${top}H${x + w - Math.min(4, w / 2)}Q${x + w},${top} ${x + w},${top + Math.min(4, h)}V${H - padB}Z`;
+    $('nlChart').innerHTML = `<svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" role="img" aria-label="New subscribers per day for the last 30 days, ${total} in total">
+      <line x1="0" x2="${W}" y1="${H - padB}" y2="${H - padB}" stroke="var(--line)" stroke-width="1"/>
+      ${days.map((d, i) => { const x = i * (bw + gap) + gap / 2, top = y(d.n);
+        return `<g class="nl-bar" data-i="${i}"><rect x="${x - gap / 2}" y="0" width="${bw + gap}" height="${H}" fill="transparent"/>${d.n ? `<path d="${bar(x, top, bw, (H - padB) - top)}" fill="var(--accent)"/>` : ''}</g>`; }).join('')}
+      <text x="0" y="${H - 4}" class="nl-axis">${nlEsc(days[0].label)}</text><text x="${W}" y="${H - 4}" text-anchor="end" class="nl-axis">Today</text>
+      <text x="0" y="${padT + 10}" class="nl-axis">${max}</text>
+    </svg><div class="nl-tip" id="nlTip" hidden></div>`;
+    const tip = $('nlTip'), svg = $('nlChart').querySelector('svg');
+    $('nlChart').querySelectorAll('.nl-bar').forEach(g => {
+      const show = () => { const d = days[g.dataset.i]; tip.hidden = false; tip.textContent = `${d.label}: ${d.n} new`;
+        const r = g.getBoundingClientRect(), box = $('nlChart').getBoundingClientRect(); tip.style.left = Math.min(box.width - 120, Math.max(0, r.left - box.left + r.width / 2 - 60)) + 'px'; };
+      g.addEventListener('mouseenter', show); g.addEventListener('click', show);
+    });
+    svg.addEventListener('mouseleave', () => { tip.hidden = true; });
+    $('nlChartTable').innerHTML = `<table class="nl-table"><thead><tr><th>Day</th><th>New</th></tr></thead><tbody>${days.slice().reverse().map(d => `<tr><td>${nlEsc(d.label)}</td><td>${d.n}</td></tr>`).join('')}</tbody></table>`;
+
+    const fromApp = all.filter(s => s.source === 'app').length, fromPage = all.length - fromApp;
+    $('nlSources').innerHTML = `<div class="row"><div class="text"><strong>Where people join</strong><div class="meta">${fromPage} from the newsletter page · ${fromApp} from the app page pop-up</div></div></div>`;
+  }
+
+  // Subscribers: search, filter, each person's activity.
+  function renderSubscribers() {
     const list = $('subscriberList'); list.innerHTML = '';
     const on = subscribed(), off = state.subscribers.length - on.length;
     $('newsletterNavCount').hidden = !on.length; $('newsletterNavCount').textContent = on.length;
-    $('newsletterSummary').textContent = state.loaded.subscribers ? `${on.length} subscribed` + (off ? ` · ${off} unsubscribed` : '') : 'Loading…';
+    $('newsletterSummary').textContent = state.loaded.subscribers ? `${on.length} subscribed` + (off ? ` · ${off} left the list` : '') : 'Loading…';
     $('newsletterCopy').disabled = $('newsletterCsv').disabled = !on.length;
-    if (!state.subscribers.length) { list.innerHTML = `<div class="empty">${state.loaded.subscribers ? 'No subscribers yet. Share creativeflow.media/newsletter to get your first ones.' : 'Loading…'}</div>`; return; }
-    state.subscribers.slice().sort((a, b) => num(b.created) - num(a.created)).forEach(s => {
-      const row = document.createElement('div'); row.className = 'row';
-      const text = document.createElement('div'); text.className = 'text';
+    const q = $('nlSearch').value.trim().toLowerCase(), f = $('nlStatus').value;
+    const shown = state.subscribers.filter(s => {
+      const st = s.status || 'subscribed';
+      if (f === 'subscribed' && st !== 'subscribed') return false;
+      if (f === 'left' && st === 'subscribed') return false;
+      return !q || String(s.name || '').toLowerCase().includes(q) || String(s.email || '').includes(q);
+    });
+    if (!shown.length) { list.innerHTML = `<div class="empty">${!state.loaded.subscribers ? 'Loading…' : state.subscribers.length ? 'Nobody matches.' : 'No subscribers yet. Share creativeflow.media/newsletter to get your first ones.'}</div>`; return; }
+    shown.sort((a, b) => num(b.created) - num(a.created)).forEach(s => {
+      const row = document.createElement('div'); row.className = 'row nl-sub';
+      const text = document.createElement('button'); text.type = 'button'; text.className = 'text nl-sub-btn'; text.setAttribute('aria-expanded', 'false');
       const name = document.createElement('strong'); name.textContent = s.name || s.email; text.appendChild(name);
       const meta = document.createElement('div'); meta.className = 'meta';
-      meta.textContent = [s.email, s.created ? 'joined ' + new Date(s.created).toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' }) : ''].filter(Boolean).join(' · ');
+      meta.textContent = [s.email, s.created ? 'joined ' + shortDate(s.created) : '', s.source === 'app' ? 'from the app page' : ''].filter(Boolean).join(' · ');
       text.appendChild(meta);
-      const out = s.status === 'unsubscribed';
-      const pill = document.createElement('span'); pill.className = 'pill ' + (out ? 'off' : 'on'); pill.textContent = out ? 'Unsubscribed' : 'Subscribed';
+      const [label, cls] = NL_STATUS[s.status || 'subscribed'] || NL_STATUS.subscribed;
+      const pill = document.createElement('span'); pill.className = 'pill ' + cls; pill.textContent = label;
       const del = document.createElement('button'); del.className = 'icon-btn'; del.type = 'button'; del.textContent = '✕';
       del.setAttribute('aria-label', 'Remove ' + (s.name || s.email));
       del.addEventListener('click', () => { if (confirm('Remove ' + (s.name || s.email) + ' from the newsletter list?')) write(async () => { await db.doc('subscribers/' + s.id).delete(); toast('Removed from the list'); }); });
-      row.append(text, pill, del); list.appendChild(row);
+      const act = document.createElement('div'); act.className = 'nl-activity'; act.hidden = true;
+      text.addEventListener('click', async () => {
+        const open = act.hidden; act.hidden = !open; text.setAttribute('aria-expanded', String(open));
+        if (!open) return;
+        act.innerHTML = '<span class="meta">Loading…</span>';
+        try {
+          const r = await nlApi('POST', { action: 'person', id: s.id });
+          act.innerHTML = r.activity.length ? `<table class="nl-table"><thead><tr><th>Email</th><th>Sent</th><th>Opened</th><th>Clicks</th></tr></thead><tbody>${r.activity.map(a =>
+            `<tr><td>${nlEsc(a.subject)}</td><td>${a.status === 'sent' ? shortDate(a.sentAt) : nlEsc(a.status)}</td><td>${a.bounced ? 'Bounced' : a.firstOpen ? (a.opens > 1 ? a.opens + ' times' : 'Yes') : 'No'}</td><td>${a.clicks || 0}</td></tr>`).join('')}</tbody></table>`
+            : '<span class="meta">No emails sent to them yet.</span>';
+        } catch (e) { act.innerHTML = '<span class="meta">Couldn\'t load their activity.</span>'; }
+      });
+      row.append(text, pill, del); list.appendChild(row); list.appendChild(act);
     });
     applyWriteMode();
   }
+  $('nlSearch').addEventListener('input', () => renderSubscribers());
+  $('nlStatus').addEventListener('change', () => renderSubscribers());
   $('newsletterCsv').addEventListener('click', () => {
     const cell = (v) => '"' + String(v == null ? '' : v).replace(/"/g, '""') + '"';
     const rows = [['Name', 'Email', 'Joined', 'Unsubscribe link']].concat(subscribed().sort((a, b) => num(a.created) - num(b.created))
@@ -996,6 +1172,131 @@
     try { await navigator.clipboard.writeText(subscribed().map(s => s.email).join(', ')); toast('Copied ' + subscribed().length + ' emails'); }
     catch (e) { toast("Couldn't copy. Use Download list instead."); }
   });
+
+  // Write: drafts, editor with formatting buttons, live preview, test and send.
+  const nlComposed = () => ({ subject: $('nlSubject').value, preview: $('nlPreview').value, body: $('nlBody').value });
+  const nlSay = (t) => { $('nlComposeMsg').textContent = t; };
+  let nlPreviewTimer = null, nlDirty = false;
+  function nlPreviewSoon(ms = 600) {
+    clearTimeout(nlPreviewTimer);
+    nlPreviewTimer = setTimeout(async () => {
+      if (!db) return;
+      try { const r = await nlApi('POST', { action: 'preview', ...nlComposed() }); $('nlFrame').srcdoc = r.html; } catch (e) {}
+    }, ms);
+  }
+  ['nlSubject', 'nlPreview', 'nlBody'].forEach(id => $(id).addEventListener('input', () => { nlDirty = true; nlPreviewSoon(); }));
+  function nlInsert(kind) {
+    const ta = $('nlBody'), a = ta.selectionStart, b = ta.selectionEnd, sel = ta.value.slice(a, b);
+    const wrap = { bold: ['**', '**', 'bold text'], italic: ['*', '*', 'italic text'] }[kind];
+    let out;
+    if (wrap) out = wrap[0] + (sel || wrap[2]) + wrap[1];
+    else if (kind === 'h1' || kind === 'h2') out = (a && ta.value[a - 1] !== '\n' ? '\n\n' : '') + (kind === 'h1' ? '# ' : '## ') + (sel || 'Heading') + '\n\n';
+    else if (kind === 'list') out = (a && ta.value[a - 1] !== '\n' ? '\n\n' : '') + (sel ? sel.split('\n').map(l => '- ' + l).join('\n') : '- First point\n- Second point') + '\n\n';
+    else if (kind === 'link') { const url = prompt('Link address (https://...)', 'https://'); if (!url || !/^https?:\/\/\S+$/.test(url)) return; out = `[${sel || 'link text'}](${url})`; }
+    else if (kind === 'image') { const url = prompt('Image address (https://... .png or .jpg)', 'https://'); if (!url || !/^https?:\/\/\S+$/.test(url)) return; out = `![${sel || 'image'}](${url})`; }
+    else if (kind === 'name') out = '{{name}}';
+    if (out == null) return;
+    ta.setRangeText(out, a, b, 'end'); ta.focus(); nlDirty = true; nlPreviewSoon(200);
+  }
+  document.querySelectorAll('.nl-toolbar button').forEach(b => b.addEventListener('click', () => nlInsert(b.dataset.md)));
+  function nlLoadDraft(c) {
+    nl.editing = c ? c.id : null;
+    $('nlSubject').value = c ? c.subject || '' : ''; $('nlPreview').value = c ? c.preview || '' : ''; $('nlBody').value = c ? c.body || '' : '';
+    nlDirty = false; nlSay(c ? 'Editing a saved draft.' : ''); nlPreviewSoon(0); renderDrafts();
+  }
+  async function nlSave(quiet) {
+    try {
+      const r = await nlApi('POST', { action: 'save', id: nl.editing || undefined, ...nlComposed() });
+      nl.editing = r.campaign.id; nlDirty = false;
+      if (!quiet) nlSay('Draft saved.');
+      await nlLoad(); return r.campaign;
+    } catch (e) { nlSay(NL_ERRORS[e.code] || 'Couldn\'t save the draft.'); throw e; }
+  }
+  $('nlNew').addEventListener('click', () => { if (nlDirty && !confirm('Start a new email? Unsaved changes to this one are lost.')) return; nlLoadDraft(null); });
+  $('nlSave').addEventListener('click', () => nlSave(false).catch(() => {}));
+  $('nlTest').addEventListener('click', async () => {
+    let to = ''; try { to = localStorage.getItem('hq.nlTestTo') || ''; } catch (e) {}
+    to = prompt('Send a test copy to which email?', to || 'richmalone11@gmail.com');
+    if (!to) return;
+    try { localStorage.setItem('hq.nlTestTo', to); } catch (e) {}
+    nlSay('Sending a test…');
+    try { await nlApi('POST', { action: 'test', ...nlComposed(), to }); nlSay('Test sent to ' + to + '. Check your inbox.'); }
+    catch (e) { nlSay(NL_ERRORS[e.code] || 'Couldn\'t send the test.'); }
+  });
+  $('nlSend').addEventListener('click', async () => {
+    const c = nlComposed();
+    if (!c.subject.trim() || !c.body.trim()) { nlSay(NL_ERRORS.empty); return; }
+    const n = subscribed().length;
+    if (!n) { nlSay(NL_ERRORS.no_subscribers); return; }
+    const limit = nl.info ? nl.info.dailyLimit : 100;
+    if (!confirm(`Send "${c.subject.trim()}" to ${n} subscriber${n === 1 ? '' : 's'}?` + (n > limit ? `\n\nResend's plan sends ${limit} a day, so this goes out over about ${Math.ceil(n / limit)} days on its own.` : '') + '\n\nThis can\'t be undone.')) return;
+    nlSay('Sending…');
+    try {
+      const saved = await nlSave(true);
+      const r = await nlApi('POST', { action: 'send', id: saved.id });
+      const sentNow = (r.run && r.run.sent) || 0;
+      toast(r.campaign.status === 'sent' ? `Sent to ${sentNow} people` : `Sending: ${sentNow} out now, the rest follow automatically`);
+      nlLoadDraft(null); await nlLoad(); nlShowTab('sent'); nlOpenDetail(r.campaign.id);
+    } catch (e) { nlSay(NL_ERRORS[e.code] || 'Couldn\'t send.'); }
+  });
+  function renderDrafts() {
+    const box = $('nlDrafts');
+    const drafts = ((nl.info && nl.info.campaigns) || []).filter(c => c.status === 'draft');
+    if (!drafts.length) { box.innerHTML = ''; return; }
+    box.innerHTML = '<span class="meta">Drafts:</span>';
+    drafts.forEach(c => {
+      const b = document.createElement('button'); b.type = 'button'; b.className = 'nl-chip' + (c.id === nl.editing ? ' on' : '');
+      b.textContent = c.subject || '(no subject)';
+      b.addEventListener('click', () => { if (nlDirty && c.id !== nl.editing && !confirm('Open this draft? Unsaved changes are lost.')) return; nlLoadDraft(c); });
+      const x = document.createElement('button'); x.type = 'button'; x.className = 'nl-chip-x'; x.textContent = '✕'; x.setAttribute('aria-label', 'Delete draft ' + (c.subject || ''));
+      x.addEventListener('click', async () => { if (!confirm('Delete this draft?')) return; try { await nlApi('POST', { action: 'delete', id: c.id }); if (nl.editing === c.id) nlLoadDraft(null); await nlLoad(); } catch (e) { toast('Couldn\'t delete it'); } });
+      const wrap = document.createElement('span'); wrap.className = 'nl-chip-wrap'; wrap.append(b, x); box.appendChild(wrap);
+    });
+  }
+
+  // Sent: every email with its numbers; open one for links and who opened.
+  function renderSent() {
+    const box = $('nlSentList');
+    const sent = ((nl.info && nl.info.campaigns) || []).filter(c => c.status !== 'draft');
+    if (!sent.length) { box.innerHTML = `<div class="empty">${nl.info ? 'Nothing sent yet. Write your first email in the Write tab.' : 'Loading…'}</div>`; return; }
+    box.innerHTML = '';
+    sent.forEach(c => {
+      const s = c.stats || { sent: 0, openRate: 0, clickRate: 0, bounced: 0 };
+      const row = document.createElement('button'); row.type = 'button'; row.className = 'row nl-sent-row' + (nl.detail === c.id ? ' on' : '');
+      row.innerHTML = `<div class="text"><strong></strong><div class="meta"></div></div><div class="nl-nums"><span><b>${pct(s.openRate)}</b> opened</span><span><b>${pct(s.clickRate)}</b> clicked</span></div>`;
+      row.querySelector('strong').textContent = c.subject || '(no subject)';
+      row.querySelector('.meta').textContent = c.status === 'sending' ? `Sending · ${c.total - c.queued} of ${c.total} out, the rest follow automatically` : `Sent ${shortDate(c.sentAt)} to ${s.sent} people` + (s.bounced ? ` · ${s.bounced} bounced` : '');
+      row.addEventListener('click', () => nlOpenDetail(c.id));
+      box.appendChild(row);
+    });
+  }
+  async function nlOpenDetail(id) {
+    nl.detail = id; renderSent();
+    const box = $('nlDetail'); box.hidden = false; box.innerHTML = '<div class="empty">Loading…</div>';
+    try {
+      const d = await nlApi('POST', { action: 'campaign', id });
+      const s = d.stats;
+      const tile = (label, value, note) => `<div class="tile"><div class="label">${label}</div><div class="value">${value}</div><div class="note">${note}</div></div>`;
+      box.innerHTML = `<h3 class="nl-detail-title">${nlEsc(d.campaign.subject)}</h3>
+        <div class="tiles">${tile('Sent', s.sent, d.campaign.status === 'sending' ? `${d.campaign.queued} still to go` : (s.delivered ? `${s.delivered} confirmed delivered` : 'emails out'))}
+        ${tile('Opened', pct(s.openRate), `${s.opened} people · ${s.opens} opens`)}
+        ${tile('Clicked', pct(s.clickRate), `${s.clicked} people · ${s.clicks} clicks`)}
+        ${tile('Bounced or spam', s.bounced + s.complained, 'taken off the list automatically')}</div>
+        <div class="group"><div class="nl-chart-head"><strong>Links clicked</strong></div>${d.links.length ? `<table class="nl-table"><tbody>${d.links.map(l => `<tr><td class="nl-url">${nlEsc(l.url)}</td><td>${l.clicks}</td></tr>`).join('')}</tbody></table>` : '<div class="empty">No clicks yet.</div>'}</div>
+        <div class="group"><div class="nl-chart-head"><strong>Who opened and clicked</strong></div>${d.recipients.length ? `<table class="nl-table"><thead><tr><th>Person</th><th>Opened</th><th>Clicks</th><th></th></tr></thead><tbody>${d.recipients.map(r =>
+          `<tr><td>${nlEsc(r.name || r.email)}<div class="meta">${nlEsc(r.email)}</div></td><td>${r.firstOpen ? (r.opens > 1 ? r.opens + ' times' : 'Yes') : 'No'}</td><td>${r.clicks}</td><td>${r.bounced ? 'Bounced' : r.complained ? 'Spam' : r.status === 'queued' ? 'Waiting' : r.status === 'failed' ? 'Failed' : r.status === 'skipped' ? 'Skipped' : ''}</td></tr>`).join('')}</tbody></table>` : '<div class="empty">Nobody yet.</div>'}</div>`;
+    } catch (e) { box.innerHTML = '<div class="empty">Couldn\'t load this email\'s numbers.</div>'; }
+  }
+
+  function renderNewsletter() {
+    renderSubscribers();
+    nlSetupBox();
+    nlOverview();
+    renderDrafts();
+    renderSent();
+  }
+  document.addEventListener('hq:page', (e) => { if (e.detail === 'newsletter' && db) nlLoad(); });
+  document.addEventListener('hq:ready', () => { if (!$('newsletter').hidden) nlLoad(); });
 
   // ---------- Jarvis: the founder's AI assistant (/api/jarvis) ----------
   // The conversation is kept in this browser exactly as the server sent it (Claude's message
@@ -2096,6 +2397,55 @@
   .prospect-draft { margin-top: 8px; }
   .newsletter-bar { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px; margin: 0 0 14px; font-weight: 600; }
   .newsletter-acts { display: flex; flex-wrap: wrap; gap: 8px; }
+  .nl-setup { padding: 12px 14px; margin: 0 0 12px; border-radius: 12px; border: 1px solid rgba(242, 201, 76, 0.45); background: rgba(242, 201, 76, 0.08); font-size: 14px; line-height: 1.55; }
+  .nl-setup code { font-size: 12.5px; background: rgba(255, 255, 255, 0.08); padding: 1px 5px; border-radius: 5px; }
+  .nl-chart-card, .nl-sources { margin-top: 12px; }
+  .nl-chart-head { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; padding: 12px 16px 4px; }
+  .nl-chart { position: relative; padding: 4px 16px 6px; }
+  .nl-chart svg { width: 100%; height: 160px; display: block; overflow: visible; }
+  .nl-axis { font-size: 11px; fill: var(--muted); }
+  .nl-bar { cursor: default; }
+  .nl-bar:hover path { opacity: 0.8; }
+  .nl-tip { position: absolute; top: 0; width: 120px; text-align: center; padding: 5px 8px; border-radius: 8px; background: var(--panel); border: 1px solid var(--field); font-size: 12.5px; font-weight: 600; pointer-events: none; }
+  .nl-table-toggle { padding: 0 16px 12px; font-size: 13px; color: var(--muted); }
+  .nl-table-toggle summary { cursor: pointer; }
+  .nl-table { width: 100%; border-collapse: collapse; font-size: 13.5px; }
+  .nl-table th { text-align: left; font-weight: 600; color: var(--muted); font-size: 12px; padding: 8px 16px; border-bottom: 1px solid var(--line); }
+  .nl-table td { padding: 8px 16px; border-top: 1px solid var(--line); border-bottom: 0; vertical-align: top; text-align: left; white-space: normal; }
+  .nl-table th { text-align: left; white-space: nowrap; }
+  .nl-table .meta { font-size: 12px; }
+  .nl-table .nl-url { word-break: break-all; }
+  .nl-filters { display: flex; flex-wrap: wrap; gap: 8px; flex: 1 1 320px; }
+  .nl-filters input { flex: 1 1 200px; min-width: 0; }
+  .nl-sub-btn { background: none; border: 0; padding: 0; text-align: left; color: inherit; font: inherit; cursor: pointer; }
+  .nl-activity { padding: 4px 0 10px; border-top: 1px solid var(--line); }
+  .nl-compose { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 12px; align-items: start; }
+  .nl-editor { padding: 14px 16px; display: grid; gap: 10px; }
+  .nl-field { display: grid; gap: 5px; font-size: 13px; font-weight: 600; color: var(--muted); }
+  .nl-field input { width: 100%; }
+  .nl-toolbar { display: flex; flex-wrap: wrap; gap: 6px; }
+  .nl-toolbar button { padding: 5px 10px; border-radius: 8px; border: 1px solid var(--field); background: transparent; color: var(--ink); font: inherit; font-size: 12.5px; cursor: pointer; }
+  .nl-toolbar button:hover { border-color: var(--accent); }
+  #nlBody { width: 100%; min-height: 320px; resize: vertical; font: inherit; font-size: 14.5px; line-height: 1.6; color: var(--ink); background: var(--canvas); border: 1px solid var(--field); border-radius: 10px; padding: 10px 12px; }
+  #nlBody:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+  .nl-hint { font-size: 12px; margin: 0; }
+  .nl-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+  .nl-preview iframe { display: block; width: 100%; height: 640px; border: 0; border-top: 1px solid var(--line); background: #f6f5f1; border-radius: 0 0 12px 12px; }
+  .nl-drafts { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin: 0 0 10px; }
+  .nl-chip-wrap { display: inline-flex; border: 1px solid var(--field); border-radius: 999px; overflow: hidden; }
+  .nl-chip, .nl-chip-x { background: transparent; border: 0; color: var(--ink); font: inherit; font-size: 12.5px; padding: 5px 10px; cursor: pointer; }
+  .nl-chip.on { background: var(--side-active); }
+  .nl-chip-x { color: var(--muted); padding-left: 4px; }
+  .nl-sent-row { width: 100%; background: none; border: 0; border-top: 1px solid var(--line); color: inherit; font: inherit; text-align: left; cursor: pointer; align-items: center; }
+  .nl-sent-row:first-child { border-top: 0; }
+  .nl-sent-row.on, .nl-sent-row:hover { background: var(--side-hover); }
+  .nl-nums { display: flex; gap: 14px; font-size: 13px; color: var(--muted); white-space: nowrap; }
+  .nl-nums b { color: var(--ink); font-size: 15px; }
+  #nlDetail { margin-top: 16px; display: grid; gap: 12px; }
+  .nl-detail-title { margin: 8px 0 0; font-size: 18px; }
+  #nlDetail .tiles { margin-bottom: 0; }
+  @media (max-width: 900px) { .nl-compose { grid-template-columns: 1fr; } .nl-preview iframe { height: 520px; } }
+  @media (max-width: 600px) { .nl-nums { flex-direction: column; gap: 2px; } .nl-table th, .nl-table td { padding: 8px 10px; } }
   /* On phones the name and draft take the full width, with the status and remove below. */
   @media (max-width: 600px) { .row.prospect { flex-wrap: wrap; } .row.prospect .text { flex-basis: 100%; } .row.prospect select { flex: 1; } }
   .prospect-draft textarea { width: 100%; margin-top: 4px; resize: vertical; font: inherit; font-size: 13.5px; line-height: 1.45; color: var(--ink); background: #0D0A14; border: 1px solid var(--field); border-radius: 10px; padding: 8px 10px; }

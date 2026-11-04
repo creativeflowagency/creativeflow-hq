@@ -2503,11 +2503,14 @@
   }
   html.cf-light body { background: #FFFFFF; color: var(--ink); }
   html.cf-light .topbar { background: #0E0F13; border-bottom-color: rgba(255, 255, 255, 0.10); }
-  html.cf-light .side { background: #F6F5F1; border-right-color: #E6E5E1; }
-  html.cf-light nav.sections a { color: #5C5B66; }
-  html.cf-light nav.sections a:hover { color: #14151A; background: rgba(20, 21, 26, 0.05); }
-  html.cf-light nav.sections a[aria-current="page"] { background: rgba(92, 47, 224, 0.10); box-shadow: inset 0 0 0 1px rgba(92, 47, 224, 0.35); color: #14151A; }
-  html.cf-light nav.sections a[aria-current="page"] svg { color: #5C2FE0; }
+  /* The left menu stays dark (the colour HQ had before light mode), matching the top bar. */
+  html.cf-light .side { background: #0E0F13; border-right-color: rgba(255, 255, 255, 0.10); border-bottom-color: rgba(255, 255, 255, 0.10); color: #B4B3BB; }
+  html.cf-light nav.sections a { color: #B4B3BB; }
+  html.cf-light nav.sections a:hover { color: #FFFFFF; background: rgba(255, 255, 255, 0.05); }
+  html.cf-light nav.sections a[aria-current="page"] { background: rgba(92, 47, 224, 0.22); box-shadow: inset 0 0 0 1px rgba(92, 47, 224, 0.6); color: #FFFFFF; }
+  html.cf-light nav.sections a[aria-current="page"] svg { color: #C9C0FF; }
+  html.cf-light .side .nav-count.muted { background: rgba(255, 255, 255, 0.1); color: #B4B3BB; }
+  html.cf-light .side-foot { color: #8E8D96; }
   html.cf-light main a:not(.btn) { color: #5C2FE0; }
   html.cf-light .tile, html.cf-light .pie-card, html.cf-light .next, html.cf-light .group, html.cf-light .table-wrap, html.cf-light .chart, html.cf-light .month-form, html.cf-light .card, html.cf-light .services-card { background: #FFFFFF; border: 1px solid #E6E5E1; }
   html.cf-light .btn.ghost { color: #14151A; border-color: rgba(20, 21, 26, 0.22); }

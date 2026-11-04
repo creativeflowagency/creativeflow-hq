@@ -1110,8 +1110,8 @@
     svg.addEventListener('mouseleave', () => { tip.hidden = true; });
     $('nlChartTable').innerHTML = `<table class="nl-table"><thead><tr><th>Day</th><th>New</th></tr></thead><tbody>${days.slice().reverse().map(d => `<tr><td>${nlEsc(d.label)}</td><td>${d.n}</td></tr>`).join('')}</tbody></table>`;
 
-    const fromApp = all.filter(s => s.source === 'app').length, fromPage = all.length - fromApp;
-    $('nlSources').innerHTML = `<div class="row"><div class="text"><strong>Where people join</strong><div class="meta">${fromPage} from the newsletter page · ${fromApp} from the app page pop-up</div></div></div>`;
+    const fromApp = all.filter(s => s.source === 'app').length, fromAgency = all.filter(s => s.source === 'agency').length, fromPage = all.length - fromApp - fromAgency;
+    $('nlSources').innerHTML = `<div class="row"><div class="text"><strong>Where people join</strong><div class="meta">${fromPage} from the newsletter page · ${fromApp} from the app page pop-up · ${fromAgency} from the agency page</div></div></div>`;
   }
 
   // Subscribers: search, filter, each person's activity.
@@ -1134,7 +1134,7 @@
       const text = document.createElement('button'); text.type = 'button'; text.className = 'text nl-sub-btn'; text.setAttribute('aria-expanded', 'false');
       const name = document.createElement('strong'); name.textContent = s.name || s.email; text.appendChild(name);
       const meta = document.createElement('div'); meta.className = 'meta';
-      meta.textContent = [s.email, s.created ? 'joined ' + shortDate(s.created) : '', s.source === 'app' ? 'from the app page' : ''].filter(Boolean).join(' · ');
+      meta.textContent = [s.email, s.created ? 'joined ' + shortDate(s.created) : '', s.source === 'app' ? 'from the app page' : s.source === 'agency' ? 'from the agency page' : ''].filter(Boolean).join(' · ');
       text.appendChild(meta);
       const [label, cls] = NL_STATUS[s.status || 'subscribed'] || NL_STATUS.subscribed;
       const pill = document.createElement('span'); pill.className = 'pill ' + cls; pill.textContent = label;

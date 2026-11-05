@@ -1355,7 +1355,7 @@
   const RV_ERRORS = { not_configured: 'Video storage isn\'t set up yet (see the box at the top).', not_video: 'That isn\'t a video file (MP4, MOV or WebM).', too_big: 'That file is over 5 GB. Export a smaller review copy (MP4, H.264).', no_space: 'Not enough storage left for that file.', upload_missing: 'The upload didn\'t arrive. Try again.', missing_title: 'Give the review a name.', empty: 'Write a note first.' };
   const rvApi = (method, body) => outreachCall('/api/reviews', method, body);
   const rvFmt = (t) => { t = Math.max(0, Math.floor(t || 0)); const h = Math.floor(t / 3600), m = Math.floor(t % 3600 / 60), s = t % 60; return (h ? h + ':' + String(m).padStart(2, '0') : m) + ':' + String(s).padStart(2, '0'); };
-  const rvLink = (p) => 'https://uploader.creativeflow.media/review/#' + p.token;
+  const rvLink = (p) => 'https://flowreview.creativeflow.media/review/#' + p.token;
   let rv = { list: null, ready: true, open: null, project: null, comments: [], version: 0 };
 
   async function rvLoad() {

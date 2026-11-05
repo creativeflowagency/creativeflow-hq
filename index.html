@@ -1352,10 +1352,10 @@
 
   // ---------- Reviews: Frame.io-style video review links (/api/reviews; videos in Cloudflare R2) ----------
   const RV_STATUS = { waiting: ['Waiting for video', 'off'], in_review: ['In review', 'off'], changes: ['Changes requested', 'warn'], approved: ['Approved', 'on'] };
-  const RV_ERRORS = { not_configured: 'Video storage isn\'t set up yet (see the box at the top).', not_video: 'That isn\'t a video file (MP4, MOV or WebM).', too_big: 'That file is over 20 GB.', missing_title: 'Give the review a name.', empty: 'Write a note first.' };
+  const RV_ERRORS = { not_configured: 'Video storage isn\'t set up yet (see the box at the top).', not_video: 'That isn\'t a video file (MP4, MOV or WebM).', too_big: 'That file is over 5 GB. Export a smaller review copy (MP4, H.264).', no_space: 'Not enough storage left for that file.', upload_missing: 'The upload didn\'t arrive. Try again.', missing_title: 'Give the review a name.', empty: 'Write a note first.' };
   const rvApi = (method, body) => outreachCall('/api/reviews', method, body);
   const rvFmt = (t) => { t = Math.max(0, Math.floor(t || 0)); const h = Math.floor(t / 3600), m = Math.floor(t % 3600 / 60), s = t % 60; return (h ? h + ':' + String(m).padStart(2, '0') : m) + ':' + String(s).padStart(2, '0'); };
-  const rvLink = (p) => 'https://creativeflow.media/review/#' + p.token;
+  const rvLink = (p) => 'https://uploader.creativeflow.media/review/#' + p.token;
   let rv = { list: null, ready: true, open: null, project: null, comments: [], version: 0 };
 
   async function rvLoad() {
@@ -1453,7 +1453,7 @@
       const top = document.createElement('div'); top.className = 'rv-note-top';
       const tc = document.createElement('button'); tc.type = 'button'; tc.className = 'rv-tc'; tc.textContent = rvFmt(c.t);
       tc.addEventListener('click', () => { const v = $('rvVideo'); v.currentTime = c.t; v.pause(); });
-      const who = document.createElement('strong'); who.textContent = c.by === 'rich' ? 'You' : c.name;
+      const who = document.createElement('strong'); who.textContent = c.by !== 'client' ? 'You' : c.name;
       top.append(tc, who);
       const body = document.createElement('div'); body.className = 'rv-note-text'; body.textContent = c.text;
       text.append(top, body);
@@ -1471,8 +1471,8 @@
     const dur = $('rvVideo').duration;
     if (!isFinite(dur) || dur <= 0) return;
     rv.comments.filter(c => c.version === rv.version).forEach(c => {
-      const b = document.createElement('button'); b.type = 'button'; b.className = c.done ? 'done' : c.by === 'rich' ? 'rich' : '';
-      b.style.left = Math.min(100, c.t / dur * 100) + '%'; b.title = rvFmt(c.t) + ' · ' + (c.by === 'rich' ? 'You' : c.name) + ': ' + c.text.slice(0, 80);
+      const b = document.createElement('button'); b.type = 'button'; b.className = c.done ? 'done' : c.by !== 'client' ? 'rich' : '';
+      b.style.left = Math.min(100, c.t / dur * 100) + '%'; b.title = rvFmt(c.t) + ' · ' + (c.by !== 'client' ? 'You' : c.name) + ': ' + c.text.slice(0, 80);
       b.setAttribute('aria-label', 'Note at ' + rvFmt(c.t));
       b.addEventListener('click', () => { const v = $('rvVideo'); v.currentTime = c.t; v.pause(); });
       box.appendChild(b);

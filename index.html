@@ -240,6 +240,7 @@
       <a href="#leads"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2.5" y="4.5" width="15" height="11" rx="2"/><path d="m3 5.5 7 5.5 7-5.5"/></svg><span>Leads</span><span class="nav-count" id="leadsNavCount" hidden></span></a>
       <a href="#newsletter"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 3.5h12v13H4z"/><path d="M7 7h6M7 10h6M7 13h3.5"/></svg><span>Newsletter</span><span class="nav-count muted" id="newsletterNavCount" hidden></span></a>
       <a href="#reviews"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2.5" y="4" width="15" height="11" rx="2"/><path d="M8.5 7.5v5l4-2.5z"/><path d="M6 17.5h8"/></svg><span>Reviews</span><span class="nav-count" id="reviewsNavCount" hidden></span></a>
+      <a href="#clients"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="8" cy="7" r="3"/><path d="M2.8 16.5c.5-2.8 2.6-4.5 5.2-4.5s4.7 1.7 5.2 4.5"/><path d="M13.6 4.4a3 3 0 0 1 0 5.4M15.3 12.3c1.1.7 1.7 2 1.9 4.2"/></svg><span>Clients</span><span class="nav-count" id="clientsNavCount" hidden></span></a>
       <a href="#prospects"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="10" cy="10" r="7"/><circle cx="10" cy="10" r="3.5"/><circle cx="10" cy="10" r=".6" fill="currentColor"/></svg><span>Prospects</span><span class="nav-count" id="prospectsNavCount" hidden></span></a>
       <a href="#agency"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 2.8 12.2 7.3l5 .7-3.6 3.5.8 5L10 14.2l-4.4 2.3.8-5L2.8 8l5-.7z"/></svg><span>Agency clients</span></a>
       <a href="#plan"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 5.5 7.5 3.5l5 2 4.5-2v11l-4.5 2-5-2L3 16.5z"/><path d="M7.5 3.5v11M12.5 5.5v11"/></svg><span>Plan</span></a>
@@ -257,6 +258,8 @@
       <div class="tile"><div class="label">Revenue this month</div><div class="value" id="tRevenue">–</div><div class="note">before fees</div></div>
       <div class="tile"><div class="label">Profit this month</div><div class="value" id="tProfit">–</div><div class="note">revenue minus all costs</div></div>
       <div class="tile"><div class="label">Fixed costs / month</div><div class="value" id="tFixed">–</div><div class="note">from Costs (yearly ÷ 12)</div></div>
+      <div class="tile"><div class="label">Agency money this month</div><div class="value" id="tGoal">–</div><div class="note" id="tGoalNote"></div></div>
+      <div class="tile"><div class="label">Owed by clients</div><div class="value" id="tOwed">–</div><div class="note" id="tOwedNote"></div></div>
       <div class="tile"><div class="label">Open to-dos</div><div class="value" id="tTodos">–</div><div class="note" id="tTodosNote"></div></div>
     </div>
     <div class="services-card activity-card">
@@ -373,6 +376,7 @@
 
   <section id="money" aria-labelledby="moneyHead">
     <h2 id="moneyHead">Money</h2>
+    <div class="crm-goal" id="moneyGoal"></div>
     <p class="section-sub">One row per month. Profit = revenue − Gumroad fees − Adonis − Netlify − other costs.</p>
     <div class="table-wrap">
       <table>
@@ -535,6 +539,22 @@
     </div>
   </section>
 
+  <section id="clients" aria-labelledby="clientsHead">
+    <h2 id="clientsHead">Clients</h2>
+    <p class="section-sub">Your agency clients: their package, this month's videos, and what they've paid. Extras over the package are added to the invoice automatically.</p>
+    <div class="crm-goal" id="clientsGoal"></div>
+    <div class="tiles" id="crmTiles"></div>
+    <div id="crmList"><div class="empty">Loading…</div></div>
+    <form class="add crm-add" id="crmAdd">
+      <input type="text" id="crmName" maxlength="80" placeholder="Client name (e.g. Sparkxs)" aria-label="Client name" required>
+      <input type="email" id="crmEmail" maxlength="200" placeholder="Email (optional)" aria-label="Client email">
+      <label class="crm-inline">Package <input type="number" id="crmPrice" min="0" step="1" value="1100" aria-label="Monthly package price"></label>
+      <select id="crmCurrency" aria-label="Currency"><option>USD</option><option>ISK</option><option>EUR</option></select>
+      <button class="btn" type="submit">Add client</button>
+    </form>
+    <p class="hint">New clients start on the monthly package: 4 long-form videos and 10 Shorts, extra long-form $200, extra Short $30. Open a client to change any of it.</p>
+  </section>
+
   <section id="reviews" aria-labelledby="reviewsHead">
     <h2 id="reviewsHead">Reviews</h2>
     <p class="section-sub">Send clients a private link to watch a cut and leave notes pinned to exact moments, then approve it. Like Frame.io, but yours.</p>
@@ -678,7 +698,7 @@
   const TESTER_STATUS = { invited: 'Invited', testing: 'Testing', feedback: 'Gave feedback', done: 'Done' };
 
   let db = null, canWrite = true;
-  const state = { todos: [], months: [], costs: [], testers: [], agency: [], leads: [], prospects: [], subscribers: [], loaded: { todos: false, months: false, costs: false, testers: false, agency: false, leads: false, prospects: false, subscribers: false } };
+  const state = { todos: [], months: [], costs: [], testers: [], agency: [], leads: [], prospects: [], subscribers: [], clients: [], projects: [], payments: [], settings: [], loaded: { clients: false, projects: false, payments: false, settings: false, todos: false, months: false, costs: false, testers: false, agency: false, leads: false, prospects: false, subscribers: false } };
   let editingCostId = null;
 
   function toast(msg) {
@@ -729,11 +749,19 @@
     $('tTodos').textContent = state.loaded.todos ? open.length : '–';
     const urgent = open.filter(t => t.group === 'now').length;
     $('tTodosNote').textContent = state.loaded.todos ? `${urgent} marked Now` : '';
-    const next = [...open.filter(t => t.group === 'now'), ...open.filter(t => t.group === 'next')].slice(0, 4);
+    const g = crmGoal();
+    $('tGoal').textContent = state.loaded.payments ? isk(g.collected) : '–';
+    $('tGoal').className = 'value' + (state.loaded.payments && g.collected >= g.goal ? ' good' : '');
+    $('tGoalNote').textContent = state.loaded.payments ? Math.round(g.collected / g.goal * 100) + '% of ' + isk(g.goal) + ' goal' : '';
+    const owed = crmOwed();
+    $('tOwed').textContent = state.loaded.payments ? isk(owed.total) : '–';
+    $('tOwed').className = 'value' + (owed.overdue ? ' bad' : '');
+    $('tOwedNote').textContent = state.loaded.payments ? (owed.overdue ? owed.overdue + ' overdue' : owed.count ? owed.count + ' invoice' + (owed.count === 1 ? '' : 's') + ' due' : 'nothing owed') : '';
+    const next = [...crmNextUp(), ...open.filter(t => t.group === 'now').map(t => t.text), ...open.filter(t => t.group === 'next').map(t => t.text)].slice(0, 6);
     const list = $('nextList'); list.innerHTML = '';
     if (!state.loaded.todos) { list.innerHTML = '<li class="meta">Loading…</li>'; return; }
     if (!next.length) { list.innerHTML = '<li class="meta">Nothing urgent. Add to-dos below.</li>'; return; }
-    next.forEach(t => { const li = document.createElement('li'); li.textContent = t.text; list.appendChild(li); });
+    next.forEach(t => { const li = document.createElement('li'); li.textContent = t; list.appendChild(li); });
   }
 
   // ---------- Pie charts (Overview) ----------
@@ -1026,7 +1054,7 @@
   // this to true (and JARVIS_ENABLED in ai-server/netlify/functions/jarvis.mjs).
   const JARVIS_ON = false;
   if (!JARVIS_ON) { $('jarvis').hidden = true; document.querySelector('nav.sections a[href="#jarvis"]').hidden = true; }
-  const PAGES = ['overview', ...(JARVIS_ON ? ['jarvis'] : []), 'todos', 'money', 'costs', 'testers', 'bugs', 'leads', 'newsletter', 'reviews', 'prospects', 'agency', 'plan'];
+  const PAGES = ['overview', ...(JARVIS_ON ? ['jarvis'] : []), 'todos', 'money', 'costs', 'testers', 'bugs', 'leads', 'newsletter', 'reviews', 'clients', 'prospects', 'agency', 'plan'];
   function showPage(name, focus) {
     if (!PAGES.includes(name)) name = 'overview';
     PAGES.forEach(p => { $(p).hidden = p !== name; });
@@ -1359,7 +1387,7 @@
   let rv = { list: null, ready: true, open: null, project: null, comments: [], version: 0 };
 
   async function rvLoad() {
-    try { const r = await rvApi('GET'); rv.list = r.projects; rv.ready = r.ready; }
+    try { const r = await rvApi('GET'); rv.list = r.projects; rv.ready = r.ready; crmSyncReviews(); renderClients(); }
     catch (e) { if (!rv.list) $('rvList').innerHTML = '<div class="empty">Couldn\'t load reviews right now.</div>'; return; }
     rvRenderList();
   }
@@ -2091,6 +2119,298 @@
   document.addEventListener('hq:page', (e) => { if (e.detail === 'prospects' && db) loadGmail(); });
   document.addEventListener('hq:ready', () => { if (!$('prospects').hidden) loadGmail(); });
 
+  // ---------- Clients: the agency CRM (packages, this month's videos, invoices, the money goal) ----------
+  // clients/<id>   { name, email, price, currency, inclLong, inclShorts, extraLong, extraShort, status, start, notes, created }
+  // projects/<id>  { clientId, title, kind: long|short, stage: footage|editing|review|delivered, footage, due, delivered, reviewId, created }
+  // payments/<id>  { clientId, month, amount, currency, status: due|paid, due, paidAt, note, created }
+  // settings/agency { goalIsk, usdToIsk, eurToIsk }
+  const CRM_STAGES = [['footage', 'Footage received'], ['editing', 'Editing'], ['review', 'In review'], ['delivered', 'Delivered']];
+  const CRM_DEFAULTS = { price: 1100, currency: 'USD', inclLong: 4, inclShorts: 10, extraLong: 200, extraShort: 30 };
+  const TURNAROUND_DAYS = 4;              // videos are delivered in 3 to 4 days
+  const crmOpen = new Set();
+  const todayStr = () => { const d = new Date(); return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); };
+  const thisMonth = () => todayStr().slice(0, 7);
+  const addDays = (ymd, n) => { const d = new Date(ymd + 'T12:00:00'); d.setDate(d.getDate() + n); return d.toISOString().slice(0, 10); };
+  const daysBetween = (a, b) => Math.round((new Date(b + 'T12:00:00') - new Date(a + 'T12:00:00')) / 864e5);
+  const crmDate = (ymd) => ymd ? new Date(ymd + 'T12:00:00').toLocaleDateString(undefined, { day: 'numeric', month: 'short' }) : '';
+  const iskFmt = new Intl.NumberFormat('is-IS', { style: 'currency', currency: 'ISK', maximumFractionDigits: 0 });
+  const isk = (n) => iskFmt.format(Math.round(n || 0));
+  const curFmt = (n, cur) => cur === 'ISK' ? isk(n) : cur === 'EUR' ? '€' + num(n).toLocaleString(undefined, { maximumFractionDigits: 2 }) : money(num(n));
+  function crmSettings() {
+    const s = state.settings.find(x => x.id === 'agency') || {};
+    return { goalIsk: num(s.goalIsk) || 480000, usdToIsk: num(s.usdToIsk) || 138, eurToIsk: num(s.eurToIsk) || 150, saved: !!s.usdToIsk };
+  }
+  const toIsk = (amount, cur) => { const s = crmSettings(); return num(amount) * (cur === 'ISK' ? 1 : cur === 'EUR' ? s.eurToIsk : s.usdToIsk); };
+  const clientOf = (id) => state.clients.find(c => c.id === id);
+  const cfg = (c) => ({ ...CRM_DEFAULTS, ...Object.fromEntries(Object.entries(c || {}).filter(([k, v]) => v !== '' && v !== undefined && v !== null)) });
+  const isLate = (p) => p.status !== 'paid' && p.due && p.due < todayStr();
+
+  // How much of the package a client has used in a month, and what the extras cost.
+  function crmUsage(c, month) {
+    const k = cfg(c);
+    const ps = state.projects.filter(p => p.clientId === c.id && String(p.footage || '').slice(0, 7) === month);
+    const long = ps.filter(p => p.kind !== 'short').length, shorts = ps.filter(p => p.kind === 'short').length;
+    const xl = Math.max(0, long - num(k.inclLong)), xs = Math.max(0, shorts - num(k.inclShorts));
+    const extras = xl * num(k.extraLong) + xs * num(k.extraShort);
+    return { long, shorts, xl, xs, extras, total: num(k.price) + extras, k };
+  }
+  // The money goal: what's actually been paid this month, and what's invoiced for this month.
+  function crmGoal() {
+    const s = crmSettings(), m = thisMonth();
+    const collected = state.payments.filter(p => p.status === 'paid' && String(p.paidAt || '').slice(0, 7) === m).reduce((a, p) => a + toIsk(p.amount, p.currency), 0);
+    const invoiced = state.payments.filter(p => p.month === m).reduce((a, p) => a + toIsk(p.amount, p.currency), 0);
+    const expected = state.clients.filter(c => (c.status || 'active') === 'active').reduce((a, c) => { const u = crmUsage(c, m); return a + toIsk(u.total, u.k.currency); }, 0);
+    return { goal: s.goalIsk, collected, invoiced, expected: Math.max(invoiced, expected), s };
+  }
+  function crmOwed() {
+    const due = state.payments.filter(p => p.status !== 'paid');
+    return { total: due.reduce((a, p) => a + toIsk(p.amount, p.currency), 0), count: due.length, overdue: due.filter(isLate).length };
+  }
+  // For Overview → Do next: overdue invoices and late videos first.
+  function crmNextUp() {
+    const out = [], t = todayStr();
+    state.payments.filter(isLate).forEach(p => { const c = clientOf(p.clientId); out.push(`Chase payment: ${c ? c.name : 'client'}, ${curFmt(p.amount, p.currency)} for ${monthLabel(p.month)} (${daysBetween(p.due, t)} days late)`); });
+    state.projects.filter(p => p.stage !== 'delivered' && p.due && p.due <= t).forEach(p => { const c = clientOf(p.clientId); out.push(`${p.due < t ? 'Late' : 'Due today'}: ${p.title}${c ? ' for ' + c.name : ''}`); });
+    return out;
+  }
+
+  function goalCard(box) {
+    if (!box) return;
+    const g = crmGoal(), pct = (n) => Math.max(0, Math.min(100, n / g.goal * 100));
+    box.innerHTML = '';
+    const top = document.createElement('div'); top.className = 'top';
+    const big = document.createElement('span'); big.className = 'big'; big.textContent = isk(g.collected);
+    const of = document.createElement('span'); of.className = 'of'; of.textContent = 'paid this month, of your ' + isk(g.goal) + ' goal (' + Math.round(g.collected / g.goal * 100) + '%)';
+    top.append(big, of);
+    const bar = document.createElement('div'); bar.className = 'bar';
+    bar.innerHTML = `<span class="exp" style="width:${pct(g.expected).toFixed(1)}%"></span><span class="got" style="width:${pct(g.collected).toFixed(1)}%"></span>`;
+    bar.setAttribute('role', 'img'); bar.setAttribute('aria-label', `${isk(g.collected)} paid of ${isk(g.goal)}; ${isk(g.expected)} expected this month`);
+    const legend = document.createElement('div'); legend.className = 'legend';
+    const left = g.goal - g.collected;
+    legend.innerHTML = `<span><i style="background:var(--good)"></i>Paid ${esc(isk(g.collected))}</span><span><i style="background:var(--accent);opacity:.32"></i>Expected this month ${esc(isk(g.expected))}</span><span>${left > 0 ? esc(isk(left)) + ' to go' : 'Goal reached'}</span>`;
+    const set = document.createElement('form'); set.className = 'set';
+    set.innerHTML = `<label>Monthly goal (ISK) <input type="number" min="0" step="1000" name="goal" value="${g.s.goalIsk}"></label><label>1 USD = <input type="number" min="1" step="0.1" name="usd" value="${g.s.usdToIsk}"> ISK</label><label>1 EUR = <input type="number" min="1" step="0.1" name="eur" value="${g.s.eurToIsk}"> ISK</label><button class="btn small ghost" type="submit">Save</button>${g.s.saved ? '' : '<span>Check the exchange rates and press Save.</span>'}`;
+    set.addEventListener('submit', (e) => {
+      e.preventDefault();
+      const goalIsk = num(set.goal.value), usdToIsk = num(set.usd.value), eurToIsk = num(set.eur.value);
+      if (!(goalIsk > 0 && usdToIsk > 0 && eurToIsk > 0)) { toast('Enter a goal and rates above 0'); return; }
+      write(async () => { await db.doc('settings/agency').set({ goalIsk, usdToIsk, eurToIsk, updated: Date.now() }); toast('Goal saved'); });
+    });
+    box.append(top, bar, legend, set);
+  }
+
+  function crmTiles() {
+    const box = $('crmTiles'); if (!box) return;
+    const active = state.clients.filter(c => (c.status || 'active') === 'active');
+    const mrr = active.reduce((a, c) => a + toIsk(cfg(c).price, cfg(c).currency), 0);
+    const owed = crmOwed(), t = todayStr();
+    const inWork = state.projects.filter(p => p.stage !== 'delivered').length;
+    const late = state.projects.filter(p => p.stage !== 'delivered' && p.due && p.due < t).length;
+    const tile = (label, value, note, cls) => `<div class="tile"><div class="label">${esc(label)}</div><div class="value ${cls || ''}">${esc(value)}</div><div class="note">${esc(note)}</div></div>`;
+    box.innerHTML = tile('Active clients', String(active.length), state.clients.length - active.length ? (state.clients.length - active.length) + ' paused or ended' : 'on a monthly package')
+      + tile('Monthly packages', isk(mrr), 'before extras')
+      + tile('Owed to you', isk(owed.total), owed.overdue ? owed.overdue + ' overdue' : owed.count + ' invoice' + (owed.count === 1 ? '' : 's') + ' due', owed.overdue ? 'bad' : '')
+      + tile('Videos in progress', String(inWork), late ? late + ' past due' : 'all on time', late ? 'bad' : '');
+  }
+
+  function renderClients() {
+    goalCard($('clientsGoal')); goalCard($('moneyGoal')); crmTiles();
+    const owed = crmOwed();
+    $('clientsNavCount').hidden = !owed.overdue; $('clientsNavCount').textContent = owed.overdue;
+    const list = $('crmList'); if (!list) return;
+    list.innerHTML = '';
+    if (!state.loaded.clients) { list.innerHTML = '<div class="empty">Loading…</div>'; return; }
+    if (!state.clients.length) { list.innerHTML = '<div class="empty">No clients yet. Add your first one below.</div>'; applyWriteMode(); return; }
+    const m = thisMonth(), order = { active: 0, paused: 1, ended: 2 };
+    state.clients.slice().sort((a, b) => (order[a.status || 'active'] - order[b.status || 'active']) || String(a.name).localeCompare(String(b.name))).forEach(c => list.appendChild(clientCard(c, m)));
+    applyWriteMode();
+  }
+
+  function clientCard(c, m) {
+    const k = cfg(c), u = crmUsage(c, m), status = c.status || 'active';
+    const d = document.createElement('details'); d.className = 'crm-client'; d.open = crmOpen.has(c.id);
+    d.addEventListener('toggle', () => { if (d.open) crmOpen.add(c.id); else crmOpen.delete(c.id); });
+    // summary: who, this month's usage, this month's payment
+    const sum = document.createElement('summary');
+    const who = document.createElement('div'); who.className = 'who';
+    const nm = document.createElement('strong'); nm.textContent = c.name || 'Client';
+    const meta = document.createElement('div'); meta.className = 'meta';
+    meta.textContent = [curFmt(k.price, k.currency) + '/month', `${k.inclLong} long-form + ${k.inclShorts} Shorts`, status !== 'active' ? (status === 'paused' ? 'Paused' : 'Ended') : '', c.email].filter(Boolean).join(' · ');
+    who.append(nm, meta);
+    const use = document.createElement('div'); use.className = 'crm-use';
+    const meter = (label, n, of) => `<div class="m"><span class="lbl">${label}</span><span class="track"><span class="${n > of ? 'over' : ''}" style="width:${Math.min(100, of ? n / of * 100 : 0).toFixed(0)}%"></span></span><span class="n">${n}/${of}</span></div>`;
+    use.innerHTML = meter('Long-form', u.long, num(k.inclLong)) + meter('Shorts', u.shorts, num(k.inclShorts))
+      + (u.extras ? `<div>Extras this month: ${[u.xl ? u.xl + ' long-form' : '', u.xs ? u.xs + ' Short' + (u.xs === 1 ? '' : 's') : ''].filter(Boolean).join(' + ')} = ${esc(curFmt(u.extras, k.currency))}</div>` : `<div>${esc(monthLabel(m))}</div>`);
+    const pay = document.createElement('div'); pay.className = 'crm-pay';
+    const inv = state.payments.find(p => p.clientId === c.id && p.month === m);
+    const amt = document.createElement('span'); amt.className = 'amt'; amt.textContent = curFmt(inv ? inv.amount : u.total, k.currency);
+    const pill = document.createElement('span');
+    if (!inv) { pill.className = 'pill off'; pill.textContent = status === 'active' ? 'Not invoiced yet' : '–'; }
+    else if (inv.status === 'paid') { pill.className = 'pill on'; pill.textContent = 'Paid ' + crmDate(inv.paidAt); }
+    else if (isLate(inv)) { pill.className = 'pill bad'; pill.textContent = 'Overdue ' + daysBetween(inv.due, todayStr()) + ' days'; }
+    else { pill.className = 'pill warn'; pill.textContent = 'Due ' + crmDate(inv.due); }
+    pay.append(amt, pill);
+    sum.append(who, use, pay);
+    d.appendChild(sum);
+    // body
+    const body = document.createElement('div'); body.className = 'crm-body';
+    body.appendChild(projectsBlock(c, k));
+    body.appendChild(paymentsBlock(c, k, m));
+    body.appendChild(editBlock(c, k));
+    d.appendChild(body);
+    return d;
+  }
+
+  function projectsBlock(c, k) {
+    const wrap = document.createElement('div');
+    const h = document.createElement('h4'); h.textContent = 'Videos'; wrap.appendChild(h);
+    const t = todayStr();
+    const ps = state.projects.filter(p => p.clientId === c.id).sort((a, b) => (a.stage === 'delivered') - (b.stage === 'delivered') || String(b.footage).localeCompare(String(a.footage)));
+    if (!ps.length) { const e = document.createElement('div'); e.className = 'meta'; e.textContent = 'No videos yet. Add one when their footage arrives.'; wrap.appendChild(e); }
+    ps.slice(0, 40).forEach(p => {
+      const row = document.createElement('div'); row.className = 'crm-row';
+      const tx = document.createElement('div'); tx.className = 't';
+      const ti = document.createElement('strong'); ti.textContent = p.title || 'Untitled'; tx.appendChild(ti);
+      const mt = document.createElement('div'); mt.className = 'meta';
+      const late = p.stage !== 'delivered' && p.due && p.due < t;
+      mt.innerHTML = esc([p.kind === 'short' ? 'Short' : 'Long-form', p.footage ? 'footage ' + crmDate(p.footage) : '', p.stage === 'delivered' ? 'delivered ' + crmDate(p.delivered) : ''].filter(Boolean).join(' · '))
+        + (p.stage !== 'delivered' && p.due ? ' · ' + (late ? `<span class="late">due ${esc(crmDate(p.due))}, late</span>` : 'due ' + esc(crmDate(p.due))) : '');
+      tx.appendChild(mt);
+      const stage = document.createElement('select'); stage.setAttribute('aria-label', 'Stage');
+      CRM_STAGES.forEach(([v, l]) => { const o = document.createElement('option'); o.value = v; o.textContent = l; stage.appendChild(o); });
+      stage.value = p.stage || 'footage';
+      stage.addEventListener('change', () => write(async () => { await db.doc('projects/' + p.id).update({ stage: stage.value, delivered: stage.value === 'delivered' ? (p.delivered || t) : '' }); }));
+      // link to a FlowReview review: its status then moves this video along by itself
+      const rvSel = document.createElement('select'); rvSel.setAttribute('aria-label', 'FlowReview review');
+      const none = document.createElement('option'); none.value = ''; none.textContent = 'No FlowReview link'; rvSel.appendChild(none);
+      ((typeof rv !== 'undefined' && rv.list) || []).forEach(r => { const o = document.createElement('option'); o.value = r.id; o.textContent = 'FlowReview: ' + r.title; rvSel.appendChild(o); });
+      if (p.reviewId && ![...rvSel.options].some(o => o.value === p.reviewId)) { const o = document.createElement('option'); o.value = p.reviewId; o.textContent = 'FlowReview (linked)'; rvSel.appendChild(o); }
+      rvSel.value = p.reviewId || '';
+      rvSel.addEventListener('change', () => write(async () => { await db.doc('projects/' + p.id).update({ reviewId: rvSel.value }); crmSyncReviews(); }));
+      const del = document.createElement('button'); del.className = 'icon-btn'; del.type = 'button'; del.textContent = '✕'; del.setAttribute('aria-label', 'Remove ' + (p.title || 'video'));
+      del.addEventListener('click', () => { if (confirm('Remove "' + (p.title || 'this video') + '"?')) write(async () => { await db.doc('projects/' + p.id).delete(); }); });
+      row.append(tx, stage, rvSel, del); wrap.appendChild(row);
+    });
+    const f = document.createElement('form'); f.className = 'crm-form';
+    f.innerHTML = `<input type="text" name="title" maxlength="120" placeholder="Video title (e.g. Ep 5: pricing my course)" aria-label="Video title" required>
+      <select name="kind" aria-label="Type"><option value="long">Long-form</option><option value="short">Short</option></select>
+      <label class="crm-inline">Footage <input type="date" name="footage" value="${todayStr()}" aria-label="Footage received"></label>
+      <button class="btn small" type="submit">Add video</button>`;
+    f.addEventListener('submit', (e) => {
+      e.preventDefault();
+      const title = f.title.value.trim(); if (!title) return;
+      const footage = f.footage.value || todayStr();
+      write(async () => { await db.collection('projects').add({ clientId: c.id, title, kind: f.kind.value, stage: 'footage', footage, due: addDays(footage, TURNAROUND_DAYS), delivered: '', reviewId: '', created: Date.now() }); toast('Video added, due ' + crmDate(addDays(footage, TURNAROUND_DAYS))); });
+    });
+    wrap.appendChild(f);
+    return wrap;
+  }
+
+  function paymentsBlock(c, k, m) {
+    const wrap = document.createElement('div');
+    const h = document.createElement('h4'); h.textContent = 'Invoices'; wrap.appendChild(h);
+    const ps = state.payments.filter(p => p.clientId === c.id).sort((a, b) => String(b.month).localeCompare(String(a.month)));
+    if (!ps.length) { const e = document.createElement('div'); e.className = 'meta'; e.textContent = 'No invoices yet.'; wrap.appendChild(e); }
+    ps.slice(0, 24).forEach(p => {
+      const row = document.createElement('div'); row.className = 'crm-row';
+      const tx = document.createElement('div'); tx.className = 't';
+      const ti = document.createElement('strong'); ti.textContent = monthLabel(p.month) + ': ' + curFmt(p.amount, p.currency); tx.appendChild(ti);
+      const mt = document.createElement('div'); mt.className = 'meta';
+      mt.textContent = [p.note, p.status === 'paid' ? 'paid ' + crmDate(p.paidAt) : 'due ' + crmDate(p.due)].filter(Boolean).join(' · ');
+      tx.appendChild(mt);
+      const pill = document.createElement('span');
+      if (p.status === 'paid') { pill.className = 'pill on'; pill.textContent = 'Paid'; }
+      else if (isLate(p)) { pill.className = 'pill bad'; pill.textContent = 'Overdue'; }
+      else { pill.className = 'pill warn'; pill.textContent = 'Due'; }
+      const tg = document.createElement('button'); tg.className = 'btn small ' + (p.status === 'paid' ? 'ghost' : ''); tg.type = 'button';
+      tg.textContent = p.status === 'paid' ? 'Mark unpaid' : 'Mark paid';
+      tg.addEventListener('click', () => write(async () => { await db.doc('payments/' + p.id).update(p.status === 'paid' ? { status: 'due', paidAt: '' } : { status: 'paid', paidAt: todayStr() }); toast(p.status === 'paid' ? 'Marked unpaid' : 'Marked paid: ' + curFmt(p.amount, p.currency)); }));
+      const del = document.createElement('button'); del.className = 'icon-btn'; del.type = 'button'; del.textContent = '✕'; del.setAttribute('aria-label', 'Delete invoice for ' + monthLabel(p.month));
+      del.addEventListener('click', () => { if (confirm('Delete the ' + monthLabel(p.month) + ' invoice?')) write(async () => { await db.doc('payments/' + p.id).delete(); }); });
+      row.append(tx, pill, tg, del); wrap.appendChild(row);
+    });
+    // create (or update) the invoice for a month: package + extras from that month's videos
+    const f = document.createElement('form'); f.className = 'crm-form';
+    f.innerHTML = `<label class="crm-inline">Month <input type="month" name="month" value="${m}" aria-label="Invoice month"></label>
+      <label class="crm-inline">Due <input type="date" name="due" value="${addDays(todayStr(), 7)}" aria-label="Due date"></label>
+      <button class="btn small" type="submit">Create invoice</button><span class="meta" data-preview></span>`;
+    const prev = f.querySelector('[data-preview]');
+    const preview = () => { const u = crmUsage(c, f.month.value || m); prev.textContent = curFmt(u.total, k.currency) + (u.extras ? ' (package ' + curFmt(k.price, k.currency) + ' + extras ' + curFmt(u.extras, k.currency) + ')' : ' (package)'); };
+    f.month.addEventListener('change', preview); preview();
+    f.addEventListener('submit', (e) => {
+      e.preventDefault();
+      const month = f.month.value || m, u = crmUsage(c, month);
+      const note = u.extras ? 'Package + ' + [u.xl ? u.xl + ' extra long-form' : '', u.xs ? u.xs + ' extra Short' + (u.xs === 1 ? '' : 's') : ''].filter(Boolean).join(' + ') : 'Monthly package';
+      const existing = state.payments.find(p => p.clientId === c.id && p.month === month);
+      if (existing && existing.status === 'paid') { toast(monthLabel(month) + ' is already paid'); return; }
+      if (existing && !confirm('Update the ' + monthLabel(month) + ' invoice to ' + curFmt(u.total, k.currency) + '?')) return;
+      write(async () => {
+        const data = { clientId: c.id, month, amount: u.total, currency: k.currency, status: 'due', due: f.due.value || addDays(todayStr(), 7), paidAt: '', note, created: existing ? existing.created : Date.now() };
+        if (existing) await db.doc('payments/' + existing.id).set(data); else await db.collection('payments').add(data);
+        toast((existing ? 'Invoice updated: ' : 'Invoice created: ') + curFmt(u.total, k.currency));
+      });
+    });
+    wrap.appendChild(f);
+    return wrap;
+  }
+
+  function editBlock(c, k) {
+    const wrap = document.createElement('div');
+    const h = document.createElement('h4'); h.textContent = 'Package and details'; wrap.appendChild(h);
+    const f = document.createElement('form'); f.className = 'crm-edit';
+    const v = (x) => esc(x == null ? '' : x);
+    f.innerHTML = `<label>Name<input type="text" name="name" maxlength="80" value="${v(c.name)}" required></label>
+      <label>Email<input type="email" name="email" maxlength="200" value="${v(c.email)}"></label>
+      <label>Monthly price<input type="number" name="price" min="0" step="1" value="${v(k.price)}"></label>
+      <label>Currency<select name="currency">${['USD', 'ISK', 'EUR'].map(x => `<option${x === k.currency ? ' selected' : ''}>${x}</option>`).join('')}</select></label>
+      <label>Long-form included<input type="number" name="inclLong" min="0" step="1" value="${v(k.inclLong)}"></label>
+      <label>Shorts included<input type="number" name="inclShorts" min="0" step="1" value="${v(k.inclShorts)}"></label>
+      <label>Extra long-form price<input type="number" name="extraLong" min="0" step="1" value="${v(k.extraLong)}"></label>
+      <label>Extra Short price<input type="number" name="extraShort" min="0" step="1" value="${v(k.extraShort)}"></label>
+      <label>Status<select name="status">${[['active', 'Active'], ['paused', 'Paused'], ['ended', 'Ended']].map(([x, l]) => `<option value="${x}"${x === (c.status || 'active') ? ' selected' : ''}>${l}</option>`).join('')}</select></label>
+      <label>Started<input type="date" name="start" value="${v(c.start)}"></label>
+      <label class="wide">Notes<input type="text" name="notes" maxlength="300" value="${v(c.notes)}" placeholder="Anything to remember: style notes, contact, upload days"></label>
+      <div class="wide" style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn small" type="submit">Save</button><button class="btn small ghost" type="button" data-del>Delete client</button></div>`;
+    f.addEventListener('submit', (e) => {
+      e.preventDefault();
+      const data = { name: f.name.value.trim(), email: f.email.value.trim().toLowerCase(), price: num(f.price.value), currency: f.currency.value, inclLong: num(f.inclLong.value), inclShorts: num(f.inclShorts.value),
+        extraLong: num(f.extraLong.value), extraShort: num(f.extraShort.value), status: f.status.value, start: f.start.value, notes: f.notes.value.trim() };
+      if (!data.name) { toast('Give the client a name'); return; }
+      write(async () => { await db.doc('clients/' + c.id).update(data); toast('Saved'); });
+    });
+    f.querySelector('[data-del]').addEventListener('click', () => {
+      const ps = state.projects.filter(p => p.clientId === c.id), pays = state.payments.filter(p => p.clientId === c.id);
+      if (!confirm(`Delete ${c.name}? Their ${ps.length} video${ps.length === 1 ? '' : 's'} and ${pays.length} invoice${pays.length === 1 ? '' : 's'} are removed too. To keep the history, set Status to Ended instead.`)) return;
+      write(async () => {
+        await sendOps([{ op: 'delete', collection: 'clients', id: c.id }, ...ps.map(p => ({ op: 'delete', collection: 'projects', id: p.id })), ...pays.map(p => ({ op: 'delete', collection: 'payments', id: p.id }))]);
+        crmOpen.delete(c.id); toast(c.name + ' deleted');
+      });
+    });
+    wrap.appendChild(f);
+    return wrap;
+  }
+
+  $('crmAdd').addEventListener('submit', (e) => {
+    e.preventDefault();
+    const name = $('crmName').value.trim(); if (!name) return;
+    const data = { ...CRM_DEFAULTS, name, email: $('crmEmail').value.trim().toLowerCase(), price: num($('crmPrice').value) || CRM_DEFAULTS.price, currency: $('crmCurrency').value, status: 'active', start: todayStr(), notes: '', created: Date.now() };
+    write(async () => { await db.collection('clients').add(data); $('crmAdd').reset(); $('crmPrice').value = CRM_DEFAULTS.price; toast(name + ' added. Open them to add videos and invoices.'); });
+  });
+
+  // FlowReview → videos: a linked review being sent, sent back or approved moves the video along.
+  const RV_TO_STAGE = { in_review: 'review', changes: 'editing', approved: 'delivered' };
+  function crmSyncReviews() {
+    if (!db || !canWrite || typeof rv === 'undefined' || !rv.list) return;
+    const ops = [];
+    state.projects.forEach(p => {
+      if (!p.reviewId) return;
+      const r = rv.list.find(x => x.id === p.reviewId); if (!r) return;
+      const stage = RV_TO_STAGE[r.status]; if (!stage || stage === p.stage) return;
+      ops.push({ op: 'update', collection: 'projects', id: p.id, data: { stage, delivered: stage === 'delivered' ? (p.delivered || todayStr()) : '' } });
+    });
+    if (ops.length) sendOps(ops).catch(() => {});
+  }
+
   // ---------- Agency clients ----------
   function renderAgency() {
     const list = $('agencyList'); list.innerHTML = '';
@@ -2123,7 +2443,7 @@
     write(async () => { await db.collection('agency').add({ name, email, note, active: true, created: Date.now() }); $('agencyForm').reset(); toast((name || email) + ' added. They\'re unlocked when they sign in.'); });
   });
 
-  function renderAll() { renderOverview(); renderTodos(); renderMonths(); renderCosts(); renderTesters(); renderLeads(); renderNewsletter(); renderProspects(); renderAgency(); }
+  function renderAll() { renderOverview(); renderTodos(); renderMonths(); renderCosts(); renderTesters(); renderLeads(); renderNewsletter(); renderProspects(); renderAgency(); renderClients(); }
   renderAll();
 
 
@@ -2392,6 +2712,10 @@
     sub('leads', db.collection('leads'), renderLeads);
     sub('subscribers', db.collection('subscribers'), renderNewsletter);
     sub('prospects', db.collection('prospects'), renderProspects);
+    sub('clients', db.collection('clients'), renderClients);
+    sub('projects', db.collection('projects'), renderClients);
+    sub('payments', db.collection('payments'), renderClients);
+    sub('settings', db.collection('settings'), renderClients);
     loadServices(false);
     loadBugs();
     loadActivity();
@@ -2675,6 +2999,52 @@
   .rv-decision { padding: 10px 16px; }
   .rv-decision:empty { display: none; }
   @media (max-width: 1000px) { .rv-grid { grid-template-columns: 1fr; } .rv-notes { max-height: none; } }
+  /* ---------- Clients (agency CRM) ---------- */
+  .crm-goal { margin: 0 0 14px; padding: 16px 18px; border-radius: 12px; background: var(--panel); box-shadow: var(--shadow); }
+  .crm-goal .top { display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px 14px; }
+  .crm-goal .big { font-size: 26px; font-weight: 800; font-variant-numeric: tabular-nums; }
+  .crm-goal .of { color: var(--muted); font-size: 14px; }
+  .crm-goal .bar { position: relative; height: 10px; border-radius: 10px; background: var(--field); margin: 12px 0 8px; overflow: hidden; }
+  .crm-goal .bar .exp { position: absolute; inset: 0 auto 0 0; background: var(--accent); opacity: 0.32; }
+  .crm-goal .bar .got { position: absolute; inset: 0 auto 0 0; background: var(--good); }
+  .crm-goal .legend { display: flex; flex-wrap: wrap; gap: 4px 16px; font-size: 12.5px; color: var(--muted); }
+  .crm-goal .legend i { display: inline-block; width: 9px; height: 9px; border-radius: 3px; margin-right: 5px; vertical-align: -1px; }
+  .crm-goal .set { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-top: 10px; font-size: 12.5px; color: var(--muted); }
+  .crm-goal .set input { width: 110px; padding: 4px 8px; font-size: 12.5px; }
+  .crm-client { margin: 0 0 10px; border-radius: 12px; background: var(--panel); box-shadow: var(--shadow); overflow: hidden; }
+  .crm-client > summary { list-style: none; cursor: pointer; display: grid; grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr) auto; gap: 10px 16px; align-items: center; padding: 14px 16px; }
+  .crm-client > summary::-webkit-details-marker { display: none; }
+  .crm-client .who strong { font-size: 15px; }
+  .crm-client .who .meta { font-size: 12.5px; color: var(--muted); margin-top: 2px; }
+  .crm-use { display: grid; gap: 6px; font-size: 12.5px; color: var(--muted); }
+  .crm-use .m { display: flex; align-items: center; gap: 8px; }
+  .crm-use .m .lbl { width: 72px; flex: none; }
+  .crm-use .m .track { flex: 1; height: 6px; border-radius: 6px; background: var(--field); overflow: hidden; }
+  .crm-use .m .track span { display: block; height: 100%; background: var(--accent); }
+  .crm-use .m .track span.over { background: var(--warn); }
+  .crm-use .m .n { width: 42px; text-align: right; font-variant-numeric: tabular-nums; color: var(--ink); font-weight: 600; }
+  .crm-pay { display: flex; flex-direction: column; align-items: flex-end; gap: 4px; text-align: right; }
+  .crm-pay .amt { font-weight: 700; font-variant-numeric: tabular-nums; }
+  .pill.bad { background: rgba(255, 107, 125, 0.16); color: var(--bad); }
+  .crm-body { border-top: 1px solid var(--line); padding: 4px 16px 16px; }
+  .crm-body h4 { margin: 16px 0 6px; font-size: 13px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); }
+  .crm-row { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 10px; padding: 9px 0; border-top: 1px solid var(--line); font-size: 13.5px; }
+  .crm-row .t { flex: 1 1 200px; min-width: 0; overflow-wrap: anywhere; }
+  .crm-row .t .meta { font-size: 12px; color: var(--muted); }
+  .crm-row select, .crm-row input { padding: 4px 8px; font-size: 12.5px; }
+  .crm-row .late { color: var(--bad); font-weight: 600; }
+  .crm-form { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-top: 10px; }
+  .crm-form input[type="text"] { flex: 1 1 200px; }
+  .crm-inline { display: inline-flex; align-items: center; gap: 6px; font-size: 12.5px; color: var(--muted); }
+  .crm-inline input { width: 90px; }
+  .crm-inline input[type="date"], .crm-inline input[type="month"] { width: 160px; }
+  .crm-edit { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 8px 10px; margin-top: 6px; }
+  .crm-edit label { display: grid; gap: 4px; font-size: 12px; color: var(--muted); }
+  .crm-edit .wide { grid-column: 1 / -1; }
+  @media (max-width: 720px) {
+    .crm-client > summary { grid-template-columns: 1fr; }
+    .crm-pay { align-items: flex-start; text-align: left; }
+  }
   .nl-setup { padding: 12px 14px; margin: 0 0 12px; border-radius: 12px; border: 1px solid rgba(242, 201, 76, 0.45); background: rgba(242, 201, 76, 0.08); font-size: 14px; line-height: 1.55; }
   .nl-setup code { font-size: 12.5px; background: rgba(255, 255, 255, 0.08); padding: 1px 5px; border-radius: 5px; }
   .nl-chart-card, .nl-sources { margin-top: 12px; }

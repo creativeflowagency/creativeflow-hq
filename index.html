@@ -729,7 +729,7 @@
   function clientsUsd(month) {
     if (typeof crmSettings !== 'function' || !state.payments) return 0;
     const st = crmSettings();
-    return state.payments.filter(p => p.status === 'paid' && String(p.paidAt || '').slice(0, 7) === month).reduce((a, p) => {
+    return allParts().filter(x => x.date.slice(0, 7) === month).reduce((a, p) => {
       const amt = num(p.amount);
       return a + (p.currency === 'ISK' ? amt / st.usdToIsk : p.currency === 'EUR' ? amt * st.eurToIsk / st.usdToIsk : amt);
     }, 0);
@@ -738,8 +738,8 @@
   function moneyRows() {
     const rows = state.months.map(m => ({ ...m, manual: true }));
     const have = new Set(rows.map(m => m.month));
-    (state.payments || []).forEach(p => {
-      const mo = p.status === 'paid' ? String(p.paidAt || '').slice(0, 7) : '';
+    (typeof allParts === 'function' ? allParts() : []).forEach(x => {
+      const mo = x.date.slice(0, 7);
       if (mo && !have.has(mo)) { have.add(mo); rows.push({ id: 'auto-' + mo, month: mo, manual: false }); }
     });
     return rows.sort((a, b) => String(a.month).localeCompare(String(b.month)));
@@ -2145,7 +2145,8 @@
   // ---------- Clients: the agency CRM (packages, this month's videos, invoices, the money goal) ----------
   // clients/<id>   { name, email, price, currency, inclLong, inclShorts, extraLong, extraShort, status, start, notes, created }
   // projects/<id>  { clientId, title, kind: long|short, stage: footage|editing|review|delivered, footage, due, delivered, reviewId, created }
-  // payments/<id>  { clientId, month, amount, currency, status: due|paid, due, paidAt, note, created }
+  // payments/<id>  { clientId, month, amount, currency, status: due|paid, due, paidAt, parts: [{ amount, date }], note, created }
+  //                 parts: each payment against the invoice (one for Paid, several for Split pay)
   // settings/agency { goalIsk, usdToIsk, eurToIsk }   goalIsk: one overall goal for money paid by clients (not monthly)
   const CRM_STAGES = [['footage', 'Footage received'], ['editing', 'Editing'], ['review', 'In review'], ['delivered', 'Delivered']];
   const CRM_DEFAULTS = { price: 1100, currency: 'USD', inclLong: 4, inclShorts: 10, extraLong: 200, extraShort: 30 };
@@ -2166,7 +2167,23 @@
   const toIsk = (amount, cur) => { const s = crmSettings(); return num(amount) * (cur === 'ISK' ? 1 : cur === 'EUR' ? s.eurToIsk : s.usdToIsk); };
   const clientOf = (id) => state.clients.find(c => c.id === id);
   const cfg = (c) => ({ ...CRM_DEFAULTS, ...Object.fromEntries(Object.entries(c || {}).filter(([k, v]) => v !== '' && v !== undefined && v !== null)) });
-  const isLate = (p) => p.status !== 'paid' && p.due && p.due < todayStr();
+  // An invoice's payments: { amount, date } each. Invoices marked paid before split pay existed count as one payment.
+  function partsOf(p) {
+    if (Array.isArray(p.parts)) return p.parts.filter(x => x && num(x.amount) > 0);
+    return p.status === 'paid' ? [{ amount: num(p.amount), date: p.paidAt || '' }] : [];
+  }
+  const paidOf = (p) => partsOf(p).reduce((a, x) => a + num(x.amount), 0);
+  const leftOf = (p) => Math.max(0, Math.round((num(p.amount) - paidOf(p)) * 100) / 100);
+  const isPaid = (p) => leftOf(p) <= 0;
+  const isLate = (p) => !isPaid(p) && p.due && p.due < todayStr();
+  // Every payment clients have made, with its currency and date (for the goal, the charts and Money).
+  const allParts = () => state.payments.flatMap(p => partsOf(p).map(x => ({ amount: num(x.amount), date: String(x.date || ''), currency: p.currency })));
+  // Saves a payment (or undoes the last one) on an invoice; status follows what's left to pay.
+  function savePayment(p, parts, msg) {
+    const amount = num(p.amount), paid = parts.reduce((a, x) => a + num(x.amount), 0);
+    const last = parts.length ? parts[parts.length - 1].date : '';
+    return write(async () => { await db.doc('payments/' + p.id).update({ parts, status: paid >= amount ? 'paid' : 'due', paidAt: paid >= amount ? last : '' }); toast(msg); });
+  }
 
   // How much of the package a client has used in a month, and what the extras cost.
   function crmUsage(c, month) {
@@ -2180,18 +2197,18 @@
   // The client goal: everything clients have paid so far (all invoices marked paid), toward one total.
   function crmGoal() {
     const s = crmSettings();
-    const collected = state.payments.filter(p => p.status === 'paid').reduce((a, p) => a + toIsk(p.amount, p.currency), 0);
-    const waiting = state.payments.filter(p => p.status !== 'paid').reduce((a, p) => a + toIsk(p.amount, p.currency), 0);
+    const collected = allParts().reduce((a, x) => a + toIsk(x.amount, x.currency), 0);
+    const waiting = state.payments.reduce((a, p) => a + toIsk(leftOf(p), p.currency), 0);
     return { goal: s.goalIsk, collected, waiting, s };
   }
   function crmOwed() {
-    const due = state.payments.filter(p => p.status !== 'paid');
-    return { total: due.reduce((a, p) => a + toIsk(p.amount, p.currency), 0), count: due.length, overdue: due.filter(isLate).length };
+    const due = state.payments.filter(p => !isPaid(p));
+    return { total: due.reduce((a, p) => a + toIsk(leftOf(p), p.currency), 0), count: due.length, overdue: due.filter(isLate).length };
   }
   // For Overview → Do next: overdue invoices and late videos first.
   function crmNextUp() {
     const out = [], t = todayStr();
-    state.payments.filter(isLate).forEach(p => { const c = clientOf(p.clientId); out.push(`Chase payment: ${c ? c.name : 'client'}, ${curFmt(p.amount, p.currency)} for ${monthLabel(p.month)} (${daysBetween(p.due, t)} days late)`); });
+    state.payments.filter(isLate).forEach(p => { const c = clientOf(p.clientId); out.push(`Chase payment: ${c ? c.name : 'client'}, ${curFmt(leftOf(p), p.currency)}${paidOf(p) ? ' left' : ''} for ${monthLabel(p.month)} (${daysBetween(p.due, t)} days late)`); });
     state.projects.filter(p => p.stage !== 'delivered' && p.due && p.due <= t).forEach(p => { const c = clientOf(p.clientId); out.push(`${p.due < t ? 'Late' : 'Due today'}: ${p.title}${c ? ' for ' + c.name : ''}`); });
     return out;
   }
@@ -2229,10 +2246,10 @@
     const months = [], d = new Date(); d.setDate(1);
     for (let i = 11; i >= 0; i--) { const x = new Date(d.getFullYear(), d.getMonth() - i, 1); months.push(x.getFullYear() + '-' + String(x.getMonth() + 1).padStart(2, '0')); }
     // start at the first month with any client money, so a new HQ isn't a row of empty bars
-    const firstUsed = months.findIndex(mo => state.payments.some(p => (p.status === 'paid' ? String(p.paidAt || '').slice(0, 7) : p.month) === mo));
+    const firstUsed = months.findIndex(mo => allParts().some(x => x.date.slice(0, 7) === mo) || state.payments.some(p => !isPaid(p) && p.month === mo));
     const ms = firstUsed < 0 ? [] : months.slice(Math.min(firstUsed, months.length - 6));
-    const paid = ms.map(mo => state.payments.filter(p => p.status === 'paid' && String(p.paidAt || '').slice(0, 7) === mo).reduce((a, p) => a + toIsk(p.amount, p.currency), 0));
-    const wait = ms.map(mo => state.payments.filter(p => p.status !== 'paid' && p.month === mo).reduce((a, p) => a + toIsk(p.amount, p.currency), 0));
+    const paid = ms.map(mo => allParts().filter(x => x.date.slice(0, 7) === mo).reduce((a, x) => a + toIsk(x.amount, x.currency), 0));
+    const wait = ms.map(mo => state.payments.filter(p => !isPaid(p) && p.month === mo).reduce((a, p) => a + toIsk(leftOf(p), p.currency), 0));
     box.innerHTML = '';
     const h = document.createElement('div'); h.className = 'crm-chart-head';
     h.innerHTML = '<h3>Client payments by month</h3><span class="legend"><span><i style="background:var(--good)"></i>Paid</span><span><i style="background:var(--accent);opacity:.32"></i>Invoiced, waiting</span></span>';
@@ -2310,8 +2327,9 @@
     const amt = document.createElement('span'); amt.className = 'amt'; amt.textContent = curFmt(inv ? inv.amount : u.total, k.currency);
     const pill = document.createElement('span');
     if (!inv) { pill.className = 'pill off'; pill.textContent = status === 'active' ? 'Not invoiced yet' : '–'; }
-    else if (inv.status === 'paid') { pill.className = 'pill on'; pill.textContent = 'Paid ' + crmDate(inv.paidAt); }
-    else if (isLate(inv)) { pill.className = 'pill bad'; pill.textContent = 'Overdue ' + daysBetween(inv.due, todayStr()) + ' days'; }
+    else if (isPaid(inv)) { pill.className = 'pill on'; pill.textContent = 'Paid ' + crmDate(inv.paidAt || (partsOf(inv).slice(-1)[0] || {}).date); }
+    else if (isLate(inv)) { pill.className = 'pill bad'; pill.textContent = (paidOf(inv) ? curFmt(leftOf(inv), k.currency) + ' left, ' : 'Overdue ') + daysBetween(inv.due, todayStr()) + ' days late'; }
+    else if (paidOf(inv)) { pill.className = 'pill warn'; pill.textContent = curFmt(paidOf(inv), k.currency) + ' paid, ' + curFmt(leftOf(inv), k.currency) + ' left'; }
     else { pill.className = 'pill warn'; pill.textContent = 'Due ' + crmDate(inv.due); }
     pay.append(amt, pill);
     sum.append(who, use, pay);
@@ -2380,18 +2398,49 @@
       const tx = document.createElement('div'); tx.className = 't';
       const ti = document.createElement('strong'); ti.textContent = monthLabel(p.month) + ': ' + curFmt(p.amount, p.currency); tx.appendChild(ti);
       const mt = document.createElement('div'); mt.className = 'meta';
-      mt.textContent = [p.note, p.status === 'paid' ? 'paid ' + crmDate(p.paidAt) : 'due ' + crmDate(p.due)].filter(Boolean).join(' · ');
+      const parts = partsOf(p), paid = paidOf(p), left = leftOf(p);
+      mt.textContent = [p.note, isPaid(p) ? 'paid in full' + (parts.length > 1 ? ' in ' + parts.length + ' payments' : '') : paid ? curFmt(paid, p.currency) + ' paid, ' + curFmt(left, p.currency) + ' left · due ' + crmDate(p.due) : 'due ' + crmDate(p.due)].filter(Boolean).join(' · ');
       tx.appendChild(mt);
+      if (parts.length) {
+        const pl = document.createElement('div'); pl.className = 'meta crm-parts';
+        pl.textContent = 'Payments: ' + parts.map(x => curFmt(x.amount, p.currency) + ' on ' + crmDate(x.date)).join(', ');
+        tx.appendChild(pl);
+      }
       const pill = document.createElement('span');
-      if (p.status === 'paid') { pill.className = 'pill on'; pill.textContent = 'Paid'; }
+      if (isPaid(p)) { pill.className = 'pill on'; pill.textContent = 'Paid'; }
       else if (isLate(p)) { pill.className = 'pill bad'; pill.textContent = 'Overdue'; }
+      else if (paid) { pill.className = 'pill warn'; pill.textContent = 'Part paid'; }
       else { pill.className = 'pill warn'; pill.textContent = 'Due'; }
-      const tg = document.createElement('button'); tg.className = 'btn small ' + (p.status === 'paid' ? 'ghost' : ''); tg.type = 'button';
-      tg.textContent = p.status === 'paid' ? 'Mark unpaid' : 'Mark paid';
-      tg.addEventListener('click', () => write(async () => { await db.doc('payments/' + p.id).update(p.status === 'paid' ? { status: 'due', paidAt: '' } : { status: 'paid', paidAt: todayStr() }); toast(p.status === 'paid' ? 'Marked unpaid' : 'Marked paid: ' + curFmt(p.amount, p.currency)); }));
+      const acts = document.createElement('div'); acts.className = 'crm-acts';
+      if (!isPaid(p)) {
+        const full = document.createElement('button'); full.className = 'btn small'; full.type = 'button';
+        full.textContent = paid ? 'Paid the rest' : 'Paid';
+        full.addEventListener('click', () => savePayment(p, [...parts, { amount: left, date: todayStr() }], 'Paid: ' + curFmt(left, p.currency) + ' added to your goal'));
+        const split = document.createElement('button'); split.className = 'btn small ghost'; split.type = 'button'; split.textContent = 'Split pay';
+        split.addEventListener('click', () => { sf.hidden = !sf.hidden; if (!sf.hidden) sf.querySelector('[name=amount]').focus(); });
+        acts.append(full, split);
+      }
+      if (parts.length) {
+        const undo = document.createElement('button'); undo.className = 'icon-btn'; undo.type = 'button'; undo.textContent = 'Undo last payment';
+        undo.addEventListener('click', () => { const lp = parts[parts.length - 1]; if (confirm('Remove the ' + curFmt(lp.amount, p.currency) + ' payment from ' + crmDate(lp.date) + '?')) savePayment(p, parts.slice(0, -1), 'Payment removed'); });
+        acts.appendChild(undo);
+      }
+      // split pay: any amount, on any date; can be done as many times as needed
+      const sf = document.createElement('div'); sf.className = 'crm-split'; sf.hidden = true;
+      sf.innerHTML = `<label class="crm-inline">Amount (${esc(p.currency)}) <input type="number" name="amount" min="0" step="0.01" max="${left}" placeholder="${left}" required></label>
+        <label class="crm-inline">Paid on <input type="date" name="date" value="${todayStr()}"></label>
+        <button class="btn small" type="button" data-add>Add payment</button><span class="meta">${esc(curFmt(left, p.currency))} left</span>`;
+      const sfAmount = sf.querySelector('[name=amount]'), sfDate = sf.querySelector('[name=date]');
+      sfAmount.addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); sf.querySelector('[data-add]').click(); } });
+      sf.querySelector('[data-add]').addEventListener('click', () => {
+        const amt = Math.round(num(sfAmount.value) * 100) / 100;
+        if (!(amt > 0)) { toast('Enter the amount they paid'); return; }
+        if (amt > left + 0.001) { toast('That\'s more than the ' + curFmt(left, p.currency) + ' left on this invoice'); return; }
+        savePayment(p, [...parts, { amount: amt, date: sfDate.value || todayStr() }], curFmt(amt, p.currency) + ' added to your goal' + (amt < left ? ', ' + curFmt(left - amt, p.currency) + ' left' : ''));
+      });
       const del = document.createElement('button'); del.className = 'icon-btn'; del.type = 'button'; del.textContent = '✕'; del.setAttribute('aria-label', 'Delete invoice for ' + monthLabel(p.month));
-      del.addEventListener('click', () => { if (confirm('Delete the ' + monthLabel(p.month) + ' invoice?')) write(async () => { await db.doc('payments/' + p.id).delete(); }); });
-      row.append(tx, pill, tg, del); wrap.appendChild(row);
+      del.addEventListener('click', () => { if (confirm('Delete the ' + monthLabel(p.month) + ' invoice?' + (parts.length ? ' Its ' + parts.length + ' payment' + (parts.length === 1 ? '' : 's') + ' come off your goal too.' : ''))) write(async () => { await db.doc('payments/' + p.id).delete(); }); });
+      row.append(tx, pill, acts, del); wrap.appendChild(row); wrap.appendChild(sf);
     });
     // create (or update) the invoice for a month: package + extras from that month's videos
     const f = document.createElement('form'); f.className = 'crm-form';
@@ -2406,10 +2455,11 @@
       const month = f.month.value || m, u = crmUsage(c, month);
       const note = u.extras ? 'Package + ' + [u.xl ? u.xl + ' extra long-form' : '', u.xs ? u.xs + ' extra Short' + (u.xs === 1 ? '' : 's') : ''].filter(Boolean).join(' + ') : 'Monthly package';
       const existing = state.payments.find(p => p.clientId === c.id && p.month === month);
-      if (existing && existing.status === 'paid') { toast(monthLabel(month) + ' is already paid'); return; }
+      if (existing && isPaid(existing)) { toast(monthLabel(month) + ' is already paid'); return; }
       if (existing && !confirm('Update the ' + monthLabel(month) + ' invoice to ' + curFmt(u.total, k.currency) + '?')) return;
       write(async () => {
-        const data = { clientId: c.id, month, amount: u.total, currency: k.currency, status: 'due', due: f.due.value || addDays(todayStr(), 7), paidAt: '', note, created: existing ? existing.created : Date.now() };
+        const keep = existing ? partsOf(existing) : [];
+        const data = { clientId: c.id, month, amount: u.total, currency: k.currency, status: keep.reduce((a, x) => a + num(x.amount), 0) >= u.total ? 'paid' : 'due', due: f.due.value || addDays(todayStr(), 7), paidAt: '', parts: keep, note, created: existing ? existing.created : Date.now() };
         if (existing) await db.doc('payments/' + existing.id).set(data); else await db.collection('payments').add(data);
         toast((existing ? 'Invoice updated: ' : 'Invoice created: ') + curFmt(u.total, k.currency));
       });
@@ -3110,6 +3160,10 @@
   .crm-row .t .meta { font-size: 12px; color: var(--muted); }
   .crm-row select, .crm-row input { padding: 4px 8px; font-size: 12.5px; }
   .crm-row .late { color: var(--bad); font-weight: 600; }
+  .crm-acts { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+  .crm-split { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; padding: 10px 12px; margin: 0 0 8px; border-radius: 10px; background: var(--field); }
+  .crm-split[hidden] { display: none; }
+  .crm-parts { margin-top: 2px; }
   .crm-form { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-top: 10px; }
   .crm-form input[type="text"] { flex: 1 1 200px; }
   .crm-inline { display: inline-flex; align-items: center; gap: 6px; font-size: 12.5px; color: var(--muted); }

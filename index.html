@@ -241,6 +241,7 @@
       <a href="#newsletter"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 3.5h12v13H4z"/><path d="M7 7h6M7 10h6M7 13h3.5"/></svg><span>Newsletter</span><span class="nav-count muted" id="newsletterNavCount" hidden></span></a>
       <a href="#reviews"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2.5" y="4" width="15" height="11" rx="2"/><path d="M8.5 7.5v5l4-2.5z"/><path d="M6 17.5h8"/></svg><span>Reviews</span><span class="nav-count" id="reviewsNavCount" hidden></span></a>
       <a href="#clients"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="8" cy="7" r="3"/><path d="M2.8 16.5c.5-2.8 2.6-4.5 5.2-4.5s4.7 1.7 5.2 4.5"/><path d="M13.6 4.4a3 3 0 0 1 0 5.4M15.3 12.3c1.1.7 1.7 2 1.9 4.2"/></svg><span>Clients</span><span class="nav-count" id="clientsNavCount" hidden></span></a>
+      <a href="#editors"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2.5" y="5" width="11" height="10" rx="2"/><path d="m13.5 9 4-2.5v7l-4-2.5"/><path d="M5.5 8.5h5"/></svg><span>Editors</span></a>
       <a href="#prospects"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="10" cy="10" r="7"/><circle cx="10" cy="10" r="3.5"/><circle cx="10" cy="10" r=".6" fill="currentColor"/></svg><span>Prospects</span><span class="nav-count" id="prospectsNavCount" hidden></span></a>
       <a href="#agency"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 2.8 12.2 7.3l5 .7-3.6 3.5.8 5L10 14.2l-4.4 2.3.8-5L2.8 8l5-.7z"/></svg><span>Agency clients</span></a>
       <a href="#plan"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 5.5 7.5 3.5l5 2 4.5-2v11l-4.5 2-5-2L3 16.5z"/><path d="M7.5 3.5v11M12.5 5.5v11"/></svg><span>Plan</span></a>
@@ -377,11 +378,11 @@
   <section id="money" aria-labelledby="moneyHead">
     <h2 id="moneyHead">Money</h2>
     <div class="crm-goal" id="moneyGoal"></div>
-    <p class="section-sub">One row per month. Profit = revenue + what clients paid − Gumroad fees − Adonis − Netlify − other costs. The Clients column fills in by itself when you mark an invoice paid.</p>
+    <p class="section-sub">One row per month. Profit = revenue + what clients paid − what you paid editors − Gumroad fees − Adonis − Netlify − other costs. The Clients column fills in by itself when you mark an invoice paid.</p>
     <div class="table-wrap">
       <table>
-        <thead><tr><th>Month</th><th>Members</th><th>Revenue</th><th>Clients</th><th>Gumroad</th><th>Adonis</th><th>Netlify</th><th>Other</th><th>Profit</th><th></th></tr></thead>
-        <tbody id="monthRows"><tr><td colspan="10" class="meta" style="text-align:left">Loading…</td></tr></tbody>
+        <thead><tr><th>Month</th><th>Members</th><th>Revenue</th><th>Clients</th><th>Editors</th><th>Gumroad</th><th>Adonis</th><th>Netlify</th><th>Other</th><th>Profit</th><th></th></tr></thead>
+        <tbody id="monthRows"><tr><td colspan="11" class="meta" style="text-align:left">Loading…</td></tr></tbody>
       </table>
     </div>
     <div class="chart" id="profitChart" hidden></div>
@@ -556,6 +557,24 @@
     <p class="hint">New clients start on the monthly package: 4 long-form videos and 10 Shorts, extra long-form $200, extra Short $30. Open a client to change any of it.</p>
   </section>
 
+  <section id="editors" aria-labelledby="editorsHead">
+    <h2 id="editorsHead">Editors</h2>
+    <p class="section-sub">What you've paid your editors. It comes off your profit on the Money page, and the client goal shows what you kept.</p>
+    <div class="tiles" id="edTiles"></div>
+    <form class="add ed-add" id="edAdd">
+      <input type="text" id="edName" list="edNames" maxlength="60" placeholder="Editor's name" aria-label="Editor's name" required>
+      <datalist id="edNames"></datalist>
+      <label class="crm-inline">Amount <input type="number" id="edAmount" min="0" step="1" aria-label="Amount paid" required></label>
+      <select id="edCurrency" aria-label="Currency"><option>ISK</option><option>USD</option><option>EUR</option></select>
+      <label class="crm-inline">Paid on <input type="date" id="edDate" aria-label="Date paid"></label>
+      <select id="edClient" aria-label="For which client"><option value="">Not for one client</option></select>
+      <input type="text" id="edNote" maxlength="140" placeholder="Note (e.g. Ep 4 + 3 Shorts)" aria-label="Note">
+      <button class="btn" type="submit">Add payment</button>
+    </form>
+    <div class="ed-who" id="edWho"></div>
+    <div class="group" id="edList"><div class="empty">Loading…</div></div>
+  </section>
+
   <section id="reviews" aria-labelledby="reviewsHead">
     <h2 id="reviewsHead">Reviews</h2>
     <p class="section-sub">Send clients a private link to watch a cut and leave notes pinned to exact moments, then approve it. Like Frame.io, but yours.</p>
@@ -699,7 +718,7 @@
   const TESTER_STATUS = { invited: 'Invited', testing: 'Testing', feedback: 'Gave feedback', done: 'Done' };
 
   let db = null, canWrite = true;
-  const state = { todos: [], months: [], costs: [], testers: [], agency: [], leads: [], prospects: [], subscribers: [], clients: [], projects: [], payments: [], settings: [], loaded: { clients: false, projects: false, payments: false, settings: false, todos: false, months: false, costs: false, testers: false, agency: false, leads: false, prospects: false, subscribers: false } };
+  const state = { todos: [], months: [], costs: [], testers: [], agency: [], leads: [], prospects: [], subscribers: [], clients: [], projects: [], payments: [], settings: [], payouts: [], loaded: { payouts: false, clients: false, projects: false, payments: false, settings: false, todos: false, months: false, costs: false, testers: false, agency: false, leads: false, prospects: false, subscribers: false } };
   let editingCostId = null;
 
   function toast(msg) {
@@ -724,7 +743,7 @@
     });
   }
 
-  function profitOf(m) { return num(m.revenue) + clientsUsd(m.month) - num(m.gumroadFees) - num(m.aiCost) - num(m.netlifyCost) - num(m.otherCosts); }
+  function profitOf(m) { return num(m.revenue) + clientsUsd(m.month) - editorsUsd(m.month) - num(m.gumroadFees) - num(m.aiCost) - num(m.netlifyCost) - num(m.otherCosts); }
   // What clients paid in a month (by the day it was marked paid), in USD like the rest of Money.
   function clientsUsd(month) {
     if (typeof crmSettings !== 'function' || !state.payments) return 0;
@@ -734,12 +753,25 @@
       return a + (p.currency === 'ISK' ? amt / st.usdToIsk : p.currency === 'EUR' ? amt * st.eurToIsk / st.usdToIsk : amt);
     }, 0);
   }
-  // The Money rows: the months you entered, plus any month where only clients paid.
+  // What you paid editors in a month, in USD.
+  function editorsUsd(month) {
+    if (typeof crmSettings !== 'function' || !state.payouts) return 0;
+    const st = crmSettings();
+    return state.payouts.filter(x => String(x.date || '').slice(0, 7) === month).reduce((a, x) => {
+      const amt = num(x.amount);
+      return a + (x.currency === 'ISK' ? amt / st.usdToIsk : x.currency === 'EUR' ? amt * st.eurToIsk / st.usdToIsk : amt);
+    }, 0);
+  }
+  // The Money rows: the months you entered, plus any month where only clients paid or editors were paid.
   function moneyRows() {
     const rows = state.months.map(m => ({ ...m, manual: true }));
     const have = new Set(rows.map(m => m.month));
     (typeof allParts === 'function' ? allParts() : []).forEach(x => {
       const mo = x.date.slice(0, 7);
+      if (mo && !have.has(mo)) { have.add(mo); rows.push({ id: 'auto-' + mo, month: mo, manual: false }); }
+    });
+    (state.payouts || []).forEach(x => {
+      const mo = String(x.date || '').slice(0, 7);
       if (mo && !have.has(mo)) { have.add(mo); rows.push({ id: 'auto-' + mo, month: mo, manual: false }); }
     });
     return rows.sort((a, b) => String(a.month).localeCompare(String(b.month)));
@@ -921,12 +953,12 @@
     const body = $('monthRows'); body.innerHTML = '';
     const rows = moneyRows();
     if (!rows.length) {
-      body.innerHTML = `<tr><td colspan="10" class="meta" style="text-align:left">${state.loaded.months ? 'No months yet. Fill in the form below at the end of each month.' : 'Loading…'}</td></tr>`;
+      body.innerHTML = `<tr><td colspan="11" class="meta" style="text-align:left">${state.loaded.months ? 'No months yet. Fill in the form below at the end of each month.' : 'Loading…'}</td></tr>`;
     }
     rows.forEach(m => {
-      const p = profitOf(m), cl = clientsUsd(m.month), dash = (v) => m.manual ? money(num(v)) : '<span class="meta">–</span>';
+      const p = profitOf(m), cl = clientsUsd(m.month), ed = editorsUsd(m.month), dash = (v) => m.manual ? money(num(v)) : '<span class="meta">–</span>';
       const tr = document.createElement('tr');
-      tr.innerHTML = `<td>${monthLabel(m.month)}</td><td>${m.manual ? num(m.members) : '<span class="meta">–</span>'}</td><td>${dash(m.revenue)}</td><td>${cl ? money(Math.round(cl * 100) / 100) : '<span class="meta">–</span>'}</td><td>${dash(m.gumroadFees)}</td><td>${dash(m.aiCost)}</td><td>${dash(m.netlifyCost)}</td><td>${dash(m.otherCosts)}</td><td class="${p >= 0 ? 'pos' : 'neg'}">${money(Math.round(p * 100) / 100)}</td>`;
+      tr.innerHTML = `<td>${monthLabel(m.month)}</td><td>${m.manual ? num(m.members) : '<span class="meta">–</span>'}</td><td>${dash(m.revenue)}</td><td>${cl ? money(Math.round(cl * 100) / 100) : '<span class="meta">–</span>'}</td><td>${ed ? '−' + money(Math.round(ed * 100) / 100) : '<span class="meta">–</span>'}</td><td>${dash(m.gumroadFees)}</td><td>${dash(m.aiCost)}</td><td>${dash(m.netlifyCost)}</td><td>${dash(m.otherCosts)}</td><td class="${p >= 0 ? 'pos' : 'neg'}">${money(Math.round(p * 100) / 100)}</td>`;
       const td = document.createElement('td');
       const edit = document.createElement('button'); edit.className = 'icon-btn'; edit.type = 'button'; edit.textContent = 'Edit';
       edit.setAttribute('aria-label', 'Edit ' + monthLabel(m.month));
@@ -1077,7 +1109,7 @@
   // this to true (and JARVIS_ENABLED in ai-server/netlify/functions/jarvis.mjs).
   const JARVIS_ON = false;
   if (!JARVIS_ON) { $('jarvis').hidden = true; document.querySelector('nav.sections a[href="#jarvis"]').hidden = true; }
-  const PAGES = ['overview', ...(JARVIS_ON ? ['jarvis'] : []), 'todos', 'money', 'costs', 'testers', 'bugs', 'leads', 'newsletter', 'reviews', 'clients', 'prospects', 'agency', 'plan'];
+  const PAGES = ['overview', ...(JARVIS_ON ? ['jarvis'] : []), 'todos', 'money', 'costs', 'testers', 'bugs', 'leads', 'newsletter', 'reviews', 'clients', 'editors', 'prospects', 'agency', 'plan'];
   function showPage(name, focus) {
     if (!PAGES.includes(name)) name = 'overview';
     PAGES.forEach(p => { $(p).hidden = p !== name; });
@@ -2199,7 +2231,8 @@
     const s = crmSettings();
     const collected = allParts().reduce((a, x) => a + toIsk(x.amount, x.currency), 0);
     const waiting = state.payments.reduce((a, p) => a + toIsk(leftOf(p), p.currency), 0);
-    return { goal: s.goalIsk, collected, waiting, s };
+    const editors = (state.payouts || []).reduce((a, x) => a + toIsk(x.amount, x.currency), 0);
+    return { goal: s.goalIsk, collected, waiting, editors, s };
   }
   function crmOwed() {
     const due = state.payments.filter(p => !isPaid(p));
@@ -2228,7 +2261,8 @@
     const legend = document.createElement('div'); legend.className = 'legend';
     const left = g.goal - g.collected;
     legend.innerHTML = `<span><b>${Math.floor(g.collected / g.goal * 100)}%</b> paid</span><span>${done ? 'Goal reached' : esc(isk(left)) + ' to go'}</span>`
-      + (g.waiting ? `<span><i style="background:var(--accent);opacity:.32"></i>${esc(isk(g.waiting))} invoiced, waiting to be paid</span>` : '');
+      + (g.waiting ? `<span><i style="background:var(--accent);opacity:.32"></i>${esc(isk(g.waiting))} invoiced, waiting to be paid</span>` : '')
+      + (g.editors ? `<span>${esc(isk(g.editors))} paid to editors, you kept <b>${esc(isk(g.collected - g.editors))}</b></span>` : '');
     const set = document.createElement('form'); set.className = 'set';
     set.innerHTML = `<label>Goal (kr) <input type="number" min="0" step="1000" name="goal" value="${g.s.goalIsk}"></label><label>1 USD = <input type="number" min="1" step="0.1" name="usd" value="${g.s.usdToIsk}"> kr</label><label>1 EUR = <input type="number" min="1" step="0.1" name="eur" value="${g.s.eurToIsk}"> kr</label><button class="btn small ghost" type="submit">Save</button>${g.s.saved ? '' : '<span>Check the exchange rates and press Save.</span>'}`;
     set.addEventListener('submit', (e) => {
@@ -2279,6 +2313,60 @@
     box.insertAdjacentHTML('beforeend', svg + '</svg>');
   }
 
+  // ---------- Editors: what you paid them ----------
+  // payouts/<id> { editor, amount, currency, date, clientId, note, created }
+  function renderEditors() {
+    const list = $('edList'); if (!list) return;
+    const m = thisMonth(), all = state.payouts.slice().sort((a, b) => String(b.date).localeCompare(String(a.date)) || num(b.created) - num(a.created));
+    const kr = (x) => toIsk(x.amount, x.currency);
+    const monthTotal = all.filter(x => String(x.date || '').slice(0, 7) === m).reduce((a, x) => a + kr(x), 0);
+    const total = all.reduce((a, x) => a + kr(x), 0);
+    const names = [...new Set(all.map(x => x.editor).filter(Boolean))];
+    const g = crmGoal();
+    const tile = (label, value, note, cls) => `<div class="tile"><div class="label">${esc(label)}</div><div class="value ${cls || ''}">${esc(value)}</div><div class="note">${esc(note)}</div></div>`;
+    $('edTiles').innerHTML = tile('Paid to editors this month', isk(monthTotal), monthLabel(m))
+      + tile('Paid to editors, all time', isk(total), all.length + ' payment' + (all.length === 1 ? '' : 's'))
+      + tile('You kept', isk(g.collected - total), 'client money paid minus editors', g.collected - total < 0 ? 'bad' : '')
+      + tile('Editors', String(names.length), names.length ? names.slice(0, 3).join(', ') + (names.length > 3 ? '…' : '') : 'none yet');
+    $('edNames').innerHTML = names.map(n => `<option value="${esc(n)}"></option>`).join('');
+    const sel = $('edClient'), keep = sel.value;
+    sel.innerHTML = '<option value="">Not for one client</option>' + state.clients.map(c => `<option value="${esc(c.id)}">For ${esc(c.name)}</option>`).join('');
+    sel.value = keep;
+    if (!$('edDate').value) $('edDate').value = todayStr();
+    // per editor
+    const who = $('edWho'); who.innerHTML = '';
+    names.forEach(n => {
+      const mine = all.filter(x => x.editor === n);
+      const d = document.createElement('div'); d.className = 'ed-card';
+      d.innerHTML = `<strong>${esc(n)}</strong><span class="big">${esc(isk(mine.reduce((a, x) => a + kr(x), 0)))}</span><span class="meta">${esc(isk(mine.filter(x => String(x.date || '').slice(0, 7) === m).reduce((a, x) => a + kr(x), 0)))} this month · ${mine.length} payment${mine.length === 1 ? '' : 's'}</span>`;
+      who.appendChild(d);
+    });
+    // history
+    list.innerHTML = '';
+    if (!state.loaded.payouts) { list.innerHTML = '<div class="empty">Loading…</div>'; return; }
+    if (!all.length) { list.innerHTML = '<div class="empty">No editor payments yet. Add one above each time you pay an editor.</div>'; applyWriteMode(); return; }
+    all.slice(0, 100).forEach(x => {
+      const row = document.createElement('div'); row.className = 'row';
+      const t = document.createElement('div'); t.className = 'text';
+      const c = x.clientId ? clientOf(x.clientId) : null;
+      const st = document.createElement('strong'); st.textContent = (x.editor || 'Editor') + ': ' + curFmt(x.amount, x.currency) + (x.currency !== 'ISK' ? ' (' + isk(kr(x)) + ')' : '');
+      const mt = document.createElement('div'); mt.className = 'meta'; mt.textContent = [crmDate(x.date), c ? 'for ' + c.name : '', x.note].filter(Boolean).join(' · ');
+      t.append(st, mt);
+      const del = document.createElement('button'); del.className = 'icon-btn'; del.type = 'button'; del.textContent = '✕'; del.setAttribute('aria-label', 'Delete payment to ' + (x.editor || 'editor'));
+      del.addEventListener('click', () => { if (confirm('Delete the ' + curFmt(x.amount, x.currency) + ' payment to ' + (x.editor || 'this editor') + '?')) write(async () => { await db.doc('payouts/' + x.id).delete(); toast('Payment deleted'); }); });
+      row.append(t, del); list.appendChild(row);
+    });
+    applyWriteMode();
+  }
+  $('edAdd').addEventListener('submit', (e) => {
+    e.preventDefault();
+    const editor = $('edName').value.trim(), amount = Math.round(num($('edAmount').value) * 100) / 100;
+    if (!editor) { toast('Add the editor\'s name'); return; }
+    if (!(amount > 0)) { toast('Enter the amount you paid'); return; }
+    const data = { editor, amount, currency: $('edCurrency').value, date: $('edDate').value || todayStr(), clientId: $('edClient').value, note: $('edNote').value.trim(), created: Date.now() };
+    write(async () => { await db.collection('payouts').add(data); $('edAmount').value = ''; $('edNote').value = ''; toast('Saved: ' + curFmt(amount, data.currency) + ' to ' + editor); });
+  });
+
   function crmTiles() {
     const box = $('crmTiles'); if (!box) return;
     const active = state.clients.filter(c => (c.status || 'active') === 'active');
@@ -2294,7 +2382,7 @@
   }
 
   function renderClients() {
-    goalCard($('clientsGoal')); goalCard($('moneyGoal')); crmChart(); crmTiles();
+    goalCard($('clientsGoal')); goalCard($('moneyGoal')); crmChart(); crmTiles(); renderEditors();
     if (state.loaded.months) renderMonths();   // the Money table and chart include client payments
     const owed = crmOwed();
     $('clientsNavCount').hidden = !owed.overdue; $('clientsNavCount').textContent = owed.overdue;
@@ -2830,6 +2918,7 @@
     sub('projects', db.collection('projects'), renderClients);
     sub('payments', db.collection('payments'), renderClients);
     sub('settings', db.collection('settings'), renderClients);
+    sub('payouts', db.collection('payouts'), renderClients);
     loadServices(false);
     loadBugs();
     loadActivity();
@@ -3160,6 +3249,14 @@
   .crm-row .t .meta { font-size: 12px; color: var(--muted); }
   .crm-row select, .crm-row input { padding: 4px 8px; font-size: 12.5px; }
   .crm-row .late { color: var(--bad); font-weight: 600; }
+  .ed-add { align-items: center; }
+  .ed-add #edName { flex: 1 1 180px; }
+  .ed-add #edNote { flex: 2 1 220px; }
+  .ed-who { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 10px; margin: 14px 0; }
+  .ed-who:empty { display: none; }
+  .ed-card { display: grid; gap: 2px; padding: 14px 16px; border-radius: 12px; background: var(--panel); box-shadow: var(--shadow); }
+  .ed-card .big { font-size: 22px; font-weight: 800; font-variant-numeric: tabular-nums; }
+  .ed-card .meta { font-size: 12.5px; color: var(--muted); }
   .crm-acts { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
   .crm-split { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; padding: 10px 12px; margin: 0 0 8px; border-radius: 10px; background: var(--field); }
   .crm-split[hidden] { display: none; }

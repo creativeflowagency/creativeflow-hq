@@ -377,11 +377,11 @@
   <section id="money" aria-labelledby="moneyHead">
     <h2 id="moneyHead">Money</h2>
     <div class="crm-goal" id="moneyGoal"></div>
-    <p class="section-sub">One row per month. Profit = revenue − Gumroad fees − Adonis − Netlify − other costs.</p>
+    <p class="section-sub">One row per month. Profit = revenue + what clients paid − Gumroad fees − Adonis − Netlify − other costs. The Clients column fills in by itself when you mark an invoice paid.</p>
     <div class="table-wrap">
       <table>
-        <thead><tr><th>Month</th><th>Members</th><th>Revenue</th><th>Gumroad</th><th>Adonis</th><th>Netlify</th><th>Other</th><th>Profit</th><th></th></tr></thead>
-        <tbody id="monthRows"><tr><td colspan="9" class="meta" style="text-align:left">Loading…</td></tr></tbody>
+        <thead><tr><th>Month</th><th>Members</th><th>Revenue</th><th>Clients</th><th>Gumroad</th><th>Adonis</th><th>Netlify</th><th>Other</th><th>Profit</th><th></th></tr></thead>
+        <tbody id="monthRows"><tr><td colspan="10" class="meta" style="text-align:left">Loading…</td></tr></tbody>
       </table>
     </div>
     <div class="chart" id="profitChart" hidden></div>
@@ -543,6 +543,7 @@
     <h2 id="clientsHead">Clients</h2>
     <p class="section-sub">Your agency clients: their package, this month's videos, and what they've paid. The goal counts every invoice marked paid. Extras over the package are added to the invoice automatically.</p>
     <div class="crm-goal" id="clientsGoal"></div>
+    <div class="crm-chart" id="crmChart"></div>
     <div class="tiles" id="crmTiles"></div>
     <div id="crmList"><div class="empty">Loading…</div></div>
     <form class="add crm-add" id="crmAdd">
@@ -723,7 +724,26 @@
     });
   }
 
-  function profitOf(m) { return num(m.revenue) - num(m.gumroadFees) - num(m.aiCost) - num(m.netlifyCost) - num(m.otherCosts); }
+  function profitOf(m) { return num(m.revenue) + clientsUsd(m.month) - num(m.gumroadFees) - num(m.aiCost) - num(m.netlifyCost) - num(m.otherCosts); }
+  // What clients paid in a month (by the day it was marked paid), in USD like the rest of Money.
+  function clientsUsd(month) {
+    if (typeof crmSettings !== 'function' || !state.payments) return 0;
+    const st = crmSettings();
+    return state.payments.filter(p => p.status === 'paid' && String(p.paidAt || '').slice(0, 7) === month).reduce((a, p) => {
+      const amt = num(p.amount);
+      return a + (p.currency === 'ISK' ? amt / st.usdToIsk : p.currency === 'EUR' ? amt * st.eurToIsk / st.usdToIsk : amt);
+    }, 0);
+  }
+  // The Money rows: the months you entered, plus any month where only clients paid.
+  function moneyRows() {
+    const rows = state.months.map(m => ({ ...m, manual: true }));
+    const have = new Set(rows.map(m => m.month));
+    (state.payments || []).forEach(p => {
+      const mo = p.status === 'paid' ? String(p.paidAt || '').slice(0, 7) : '';
+      if (mo && !have.has(mo)) { have.add(mo); rows.push({ id: 'auto-' + mo, month: mo, manual: false }); }
+    });
+    return rows.sort((a, b) => String(a.month).localeCompare(String(b.month)));
+  }
   function fixedMonthly() {
     return state.costs.reduce((sum, c) => sum + (c.period === 'month' ? num(c.amount) : c.period === 'year' ? num(c.amount) / 12 : 0), 0);
   }
@@ -899,13 +919,14 @@
   // ---------- Money ----------
   function renderMonths() {
     const body = $('monthRows'); body.innerHTML = '';
-    if (!state.months.length) {
-      body.innerHTML = `<tr><td colspan="9" class="meta" style="text-align:left">${state.loaded.months ? 'No months yet. Fill in the form below at the end of each month.' : 'Loading…'}</td></tr>`;
+    const rows = moneyRows();
+    if (!rows.length) {
+      body.innerHTML = `<tr><td colspan="10" class="meta" style="text-align:left">${state.loaded.months ? 'No months yet. Fill in the form below at the end of each month.' : 'Loading…'}</td></tr>`;
     }
-    state.months.forEach(m => {
-      const p = profitOf(m);
+    rows.forEach(m => {
+      const p = profitOf(m), cl = clientsUsd(m.month), dash = (v) => m.manual ? money(num(v)) : '<span class="meta">–</span>';
       const tr = document.createElement('tr');
-      tr.innerHTML = `<td>${monthLabel(m.month)}</td><td>${num(m.members)}</td><td>${money(num(m.revenue))}</td><td>${money(num(m.gumroadFees))}</td><td>${money(num(m.aiCost))}</td><td>${money(num(m.netlifyCost))}</td><td>${money(num(m.otherCosts))}</td><td class="${p >= 0 ? 'pos' : 'neg'}">${money(p)}</td>`;
+      tr.innerHTML = `<td>${monthLabel(m.month)}</td><td>${m.manual ? num(m.members) : '<span class="meta">–</span>'}</td><td>${dash(m.revenue)}</td><td>${cl ? money(Math.round(cl * 100) / 100) : '<span class="meta">–</span>'}</td><td>${dash(m.gumroadFees)}</td><td>${dash(m.aiCost)}</td><td>${dash(m.netlifyCost)}</td><td>${dash(m.otherCosts)}</td><td class="${p >= 0 ? 'pos' : 'neg'}">${money(Math.round(p * 100) / 100)}</td>`;
       const td = document.createElement('td');
       const edit = document.createElement('button'); edit.className = 'icon-btn'; edit.type = 'button'; edit.textContent = 'Edit';
       edit.setAttribute('aria-label', 'Edit ' + monthLabel(m.month));
@@ -917,14 +938,16 @@
       const del = document.createElement('button'); del.className = 'icon-btn'; del.type = 'button'; del.textContent = '✕';
       del.setAttribute('aria-label', 'Delete ' + monthLabel(m.month));
       del.addEventListener('click', () => write(async () => { await db.doc('months/' + m.id).delete(); toast('Month deleted'); }));
-      td.append(edit, del); tr.appendChild(td); body.appendChild(tr);
+      if (m.manual) td.append(edit, del);
+      else { edit.textContent = 'Add app numbers'; td.append(edit); }
+      tr.appendChild(td); body.appendChild(tr);
     });
     renderChart();
     applyWriteMode();
   }
   function renderChart() {
     const box = $('profitChart');
-    const ms = state.months.slice(-12);
+    const ms = moneyRows().slice(-12);
     box.hidden = ms.length < 2;
     if (ms.length < 2) return;
     const W = 640, H = 200, padL = 56, padR = 12, padT = 16, padB = 30;
@@ -2200,6 +2223,45 @@
     box.append(lbl, big, bar, legend, set);
   }
 
+  // Client payments by month (kr): paid in green (by the day it was paid), invoiced but waiting faint (by invoice month).
+  function crmChart() {
+    const box = $('crmChart'); if (!box) return;
+    const months = [], d = new Date(); d.setDate(1);
+    for (let i = 11; i >= 0; i--) { const x = new Date(d.getFullYear(), d.getMonth() - i, 1); months.push(x.getFullYear() + '-' + String(x.getMonth() + 1).padStart(2, '0')); }
+    // start at the first month with any client money, so a new HQ isn't a row of empty bars
+    const firstUsed = months.findIndex(mo => state.payments.some(p => (p.status === 'paid' ? String(p.paidAt || '').slice(0, 7) : p.month) === mo));
+    const ms = firstUsed < 0 ? [] : months.slice(Math.min(firstUsed, months.length - 6));
+    const paid = ms.map(mo => state.payments.filter(p => p.status === 'paid' && String(p.paidAt || '').slice(0, 7) === mo).reduce((a, p) => a + toIsk(p.amount, p.currency), 0));
+    const wait = ms.map(mo => state.payments.filter(p => p.status !== 'paid' && p.month === mo).reduce((a, p) => a + toIsk(p.amount, p.currency), 0));
+    box.innerHTML = '';
+    const h = document.createElement('div'); h.className = 'crm-chart-head';
+    h.innerHTML = '<h3>Client payments by month</h3><span class="legend"><span><i style="background:var(--good)"></i>Paid</span><span><i style="background:var(--accent);opacity:.32"></i>Invoiced, waiting</span></span>';
+    box.appendChild(h);
+    if (!ms.length) { const e = document.createElement('div'); e.className = 'empty'; e.textContent = 'Your first invoice shows up here. Open a client, create an invoice, then mark it paid.'; box.appendChild(e); return; }
+    const W = 640, H = 210, padL = 64, padR = 10, padT = 18, padB = 28;
+    const max = Math.max(1, ...ms.map((_, i) => paid[i] + wait[i]));
+    const y = (v) => padT + (1 - v / max) * (H - padT - padB);
+    const bw = (W - padL - padR) / ms.length;
+    const cs = getComputedStyle(document.documentElement);
+    const good = cs.getPropertyValue('--good').trim(), accent = cs.getPropertyValue('--accent').trim(), line = cs.getPropertyValue('--line').trim(), muted = cs.getPropertyValue('--muted').trim(), ink = cs.getPropertyValue('--ink').trim();
+    const font = 'font-family="Helvetica Neue, Helvetica, Arial, sans-serif"';
+    const short = (v) => v >= 1e6 ? (v / 1e6).toFixed(1).replace(/\.0$/, '') + 'M' : v >= 1000 ? Math.round(v / 1000) + 'k' : String(Math.round(v));
+    let svg = `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Client payments by month in krónur">`;
+    [max, max / 2, 0].forEach(v => {
+      svg += `<line x1="${padL}" x2="${W - padR}" y1="${y(v)}" y2="${y(v)}" stroke="${line}" stroke-width="1"/>`;
+      svg += `<text x="${padL - 8}" y="${y(v) + 4}" text-anchor="end" font-size="11" fill="${muted}" ${font}>${short(v)} kr</text>`;
+    });
+    ms.forEach((mo, i) => {
+      const x = padL + i * bw + bw * 0.18, w = bw * 0.64;
+      const pTop = y(paid[i]), wTop = y(paid[i] + wait[i]);
+      if (wait[i]) svg += `<rect x="${x}" y="${wTop}" width="${w}" height="${Math.max(0, pTop - wTop)}" rx="3" fill="${accent}" opacity="0.32"><title>${monthLabel(mo)}: ${krNum(wait[i])} kr waiting</title></rect>`;
+      if (paid[i]) svg += `<rect x="${x}" y="${pTop}" width="${w}" height="${Math.max(0, y(0) - pTop)}" rx="3" fill="${good}"><title>${monthLabel(mo)}: ${krNum(paid[i])} kr paid</title></rect>`;
+      if (paid[i] + wait[i]) svg += `<text x="${x + w / 2}" y="${wTop - 5}" text-anchor="middle" font-size="10.5" font-weight="700" fill="${ink}" ${font}>${short(paid[i] + wait[i])}</text>`;
+      svg += `<text x="${x + w / 2}" y="${H - 9}" text-anchor="middle" font-size="11" fill="${muted}" ${font}>${new Date(mo + '-01T12:00:00').toLocaleDateString(undefined, { month: 'short' })}</text>`;
+    });
+    box.insertAdjacentHTML('beforeend', svg + '</svg>');
+  }
+
   function crmTiles() {
     const box = $('crmTiles'); if (!box) return;
     const active = state.clients.filter(c => (c.status || 'active') === 'active');
@@ -2215,7 +2277,8 @@
   }
 
   function renderClients() {
-    goalCard($('clientsGoal')); goalCard($('moneyGoal')); crmTiles();
+    goalCard($('clientsGoal')); goalCard($('moneyGoal')); crmChart(); crmTiles();
+    if (state.loaded.months) renderMonths();   // the Money table and chart include client payments
     const owed = crmOwed();
     $('clientsNavCount').hidden = !owed.overdue; $('clientsNavCount').textContent = owed.overdue;
     const list = $('crmList'); if (!list) return;
@@ -3018,6 +3081,13 @@
   .crm-goal .legend i { display: inline-block; width: 9px; height: 9px; border-radius: 3px; margin-right: 5px; vertical-align: -1px; }
   .crm-goal .set { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-top: 10px; font-size: 12.5px; color: var(--muted); }
   .crm-goal .set input { width: 110px; padding: 4px 8px; font-size: 12.5px; }
+  .crm-chart { margin: 0 0 14px; padding: 14px 16px 8px; border-radius: 12px; background: var(--panel); box-shadow: var(--shadow); }
+  .crm-chart-head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 6px 12px; }
+  .crm-chart-head h3 { margin: 0; font-size: 14px; }
+  .crm-chart-head .legend { display: flex; gap: 12px; font-size: 12px; color: var(--muted); }
+  .crm-chart-head .legend i { display: inline-block; width: 9px; height: 9px; border-radius: 3px; margin-right: 5px; vertical-align: -1px; }
+  .crm-chart svg { display: block; width: 100%; height: auto; margin-top: 6px; }
+  .crm-chart .empty { padding: 18px 0 12px; }
   .crm-client { margin: 0 0 10px; border-radius: 12px; background: var(--panel); box-shadow: var(--shadow); overflow: hidden; }
   .crm-client > summary { list-style: none; cursor: pointer; display: grid; grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr) auto; gap: 10px 16px; align-items: center; padding: 14px 16px; }
   .crm-client > summary::-webkit-details-marker { display: none; }
